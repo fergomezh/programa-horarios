@@ -19,7 +19,6 @@ export default function ScheduleGrid({ grade, conflicts }: Props) {
       <table className="border-collapse text-xs" style={{ minWidth: '100%' }}>
         <thead>
           <tr className="sticky top-0 z-10">
-            {/* Time header */}
             <th
               className="border border-slate-200 px-3 py-2.5 text-left font-semibold whitespace-nowrap"
               style={{
@@ -37,11 +36,11 @@ export default function ScheduleGrid({ grade, conflicts }: Props) {
             {DAYS_OF_WEEK.map((d) => (
               <th
                 key={d.id}
-                className="border border-slate-600/30 px-3 py-2.5 text-center font-semibold"
+                className="border border-slate-600/30 px-2 py-2.5 text-center font-semibold"
                 style={{
                   background: '#1e293b',
                   color: '#e2e8f0',
-                  minWidth: 130,
+                  minWidth: 100,
                   fontSize: 12,
                   letterSpacing: '0.03em',
                 }}
@@ -69,9 +68,7 @@ export default function ScheduleGrid({ grade, conflicts }: Props) {
                       borderBottom: '2px solid #e2e8f0',
                     }}
                   >
-                    <span className="font-time">
-                      {slot.startTime}–{slot.endTime}
-                    </span>
+                    <span className="font-time">{slot.startTime}–{slot.endTime}</span>
                     {' · '}
                     <span className="font-semibold">{slot.breakLabel}</span>
                   </td>
@@ -80,22 +77,15 @@ export default function ScheduleGrid({ grade, conflicts }: Props) {
             }
 
             return (
-              <tr key={slot.id} className="group">
-                {/* Time label cell */}
+              <tr key={slot.id}>
                 <td
-                  className="border border-slate-200 px-2.5 py-1.5 whitespace-nowrap"
-                  style={{ background: '#f8fafc', verticalAlign: 'middle' }}
+                  className="border border-slate-200 px-2 py-1.5 whitespace-nowrap"
+                  style={{ background: '#f8fafc', verticalAlign: 'middle', width: 90, minWidth: 90 }}
                 >
-                  <div
-                    className="font-semibold text-slate-600"
-                    style={{ fontSize: 11, letterSpacing: '0.01em' }}
-                  >
+                  <div className="font-semibold text-slate-600" style={{ fontSize: 11, letterSpacing: '0.01em' }}>
                     {slot.label}
                   </div>
-                  <div
-                    className="text-slate-400 font-time mt-0.5"
-                    style={{ fontSize: 10 }}
-                  >
+                  <div className="text-slate-400 font-time mt-0.5" style={{ fontSize: 10 }}>
                     {slot.startTime}–{slot.endTime}
                   </div>
                 </td>
@@ -105,6 +95,7 @@ export default function ScheduleGrid({ grade, conflicts }: Props) {
                     (a) => a.gradeId === grade.id && a.slotId === slot.id && a.day === d.id,
                   )
                   const teacher = assignment ? (teacherMap.get(assignment.teacherId) ?? null) : null
+                  const subject = assignment?.subject ?? null
 
                   return (
                     <ScheduleCell
@@ -113,6 +104,7 @@ export default function ScheduleGrid({ grade, conflicts }: Props) {
                       slotId={slot.id}
                       day={d.id}
                       teacher={teacher}
+                      subject={subject}
                       conflicts={conflicts}
                     />
                   )

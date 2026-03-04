@@ -10,8 +10,8 @@ interface ScheduleState {
   activeGradeId: string | null
 
   // Teacher actions
-  addTeacher: (name: string, subject: string) => void
-  updateTeacher: (id: string, name: string, subject: string) => void
+  addTeacher: (name: string, subjects: string[]) => void
+  updateTeacher: (id: string, name: string, subjects: string[]) => void
   removeTeacher: (id: string) => void
 
   // Grade actions
@@ -21,7 +21,7 @@ interface ScheduleState {
   setActiveGradeId: (id: string | null) => void
 
   // Assignment actions
-  assignTeacher: (gradeId: string, slotId: string, day: DayOfWeek, teacherId: string) => void
+  assignTeacher: (gradeId: string, slotId: string, day: DayOfWeek, teacherId: string, subject: string) => void
   removeAssignment: (gradeId: string, slotId: string, day: DayOfWeek) => void
   moveAssignment: (
     sourceGradeId: string,
@@ -48,11 +48,11 @@ function uid(): string {
 }
 
 const SAMPLE_TEACHERS: Omit<Teacher, 'id'>[] = [
-  { name: 'Marta López', subject: 'Matemáticas', color: TEACHER_COLORS[0] },
-  { name: 'Carlos Rivas', subject: 'Lenguaje', color: TEACHER_COLORS[1] },
-  { name: 'Ana García', subject: 'Ciencias', color: TEACHER_COLORS[2] },
-  { name: 'Pedro Molina', subject: 'Historia', color: TEACHER_COLORS[3] },
-  { name: 'Lucía Torres', subject: 'Inglés', color: TEACHER_COLORS[4] },
+  { name: 'Marta López', subjects: ['Matemáticas', 'Estadística'], color: TEACHER_COLORS[0] },
+  { name: 'Carlos Rivas', subjects: ['Lenguaje', 'Literatura'], color: TEACHER_COLORS[1] },
+  { name: 'Ana García', subjects: ['Ciencias', 'Biología', 'Química'], color: TEACHER_COLORS[2] },
+  { name: 'Pedro Molina', subjects: ['Historia', 'Ciencias Sociales'], color: TEACHER_COLORS[3] },
+  { name: 'Lucía Torres', subjects: ['Inglés'], color: TEACHER_COLORS[4] },
 ]
 
 const SAMPLE_GRADES: Omit<Grade, 'id'>[] = [
@@ -71,20 +71,19 @@ export const useScheduleStore = create<ScheduleState>()(
       assignments: [],
       activeGradeId: null,
 
-      addTeacher(name, subject) {
+      addTeacher(name, subjects) {
         const teacher: Teacher = {
           id: uid(),
           name,
-          subject,
+          subjects,
           color: nextColor(),
         }
-        // sync colorIndex with existing teachers count
         set((s) => ({ teachers: [...s.teachers, teacher] }))
       },
 
-      updateTeacher(id, name, subject) {
+      updateTeacher(id, name, subjects) {
         set((s) => ({
-          teachers: s.teachers.map((t) => (t.id === id ? { ...t, name, subject } : t)),
+          teachers: s.teachers.map((t) => (t.id === id ? { ...t, name, subjects } : t)),
         }))
       },
 
@@ -138,7 +137,7 @@ export const useScheduleStore = create<ScheduleState>()(
         set({ activeGradeId: id })
       },
 
-      assignTeacher(gradeId, slotId, day, teacherId) {
+      assignTeacher(gradeId, slotId, day, teacherId, subject) {
         set((s) => {
           const others = s.assignments.filter(
             (a) => !(a.gradeId === gradeId && a.slotId === slotId && a.day === day),
@@ -149,6 +148,7 @@ export const useScheduleStore = create<ScheduleState>()(
             slotId,
             day,
             teacherId,
+            subject,
           }
           return { assignments: [...others, newAssignment] }
         })
@@ -168,10 +168,15 @@ export const useScheduleStore = create<ScheduleState>()(
           sourceSlotId === targetSlotId &&
           sourceDay === targetDay
         ) {
-          return // no-op: same cell
+          return
         }
         set((s) => {
-          // Remove source and target assignments
+          // Preserve the subject from the source assignment
+          const source = s.assignments.find(
+            (a) => a.gradeId === sourceGradeId && a.slotId === sourceSlotId && a.day === sourceDay,
+          )
+          const subject = source?.subject ?? ''
+
           const filtered = s.assignments.filter(
             (a) =>
               !(a.gradeId === sourceGradeId && a.slotId === sourceSlotId && a.day === sourceDay) &&
@@ -183,6 +188,7 @@ export const useScheduleStore = create<ScheduleState>()(
             slotId: targetSlotId,
             day: targetDay,
             teacherId,
+            subject,
           }
           return { assignments: [...filtered, newAssignment] }
         })
@@ -205,7 +211,7 @@ export const useScheduleStore = create<ScheduleState>()(
       },
     }),
     {
-      name: 'lamatepec-horarios-v1',
+      name: 'lamatepec-horarios-v2',
       partialize: (state) => ({
         teachers: state.teachers,
         grades: state.grades,

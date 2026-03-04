@@ -3,7 +3,7 @@ export type DayOfWeek = 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes'
 export interface Teacher {
   id: string
   name: string
-  subject: string
+  subjects: string[]
   color: string
 }
 
@@ -20,6 +20,7 @@ export interface Assignment {
   slotId: string
   day: DayOfWeek
   teacherId: string
+  subject: string // which subject this teacher is teaching in this specific slot
 }
 
 export interface TimeSlot {

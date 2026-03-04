@@ -11,10 +11,11 @@ interface Props {
   slotId: string
   day: DayOfWeek
   teacher: Teacher | null
+  subject: string | null
   conflicts: Map<string, Conflict>
 }
 
-export default function ScheduleCell({ gradeId, slotId, day, teacher, conflicts }: Props) {
+export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, conflicts }: Props) {
   const removeAssignment = useScheduleStore((s) => s.removeAssignment)
   const grades = useScheduleStore((s) => s.grades)
 
@@ -27,7 +28,6 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, conflicts 
   const conflict = conflictKey ? conflicts.get(conflictKey) : undefined
   const isConflict = !!conflict
 
-  // Build tooltip for conflict cells
   let conflictTitle: string | undefined
   if (isConflict && conflict && teacher) {
     const gradeMap = new Map(grades.map((g) => [g.id, g]))
@@ -39,10 +39,10 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, conflicts 
 
   const style: React.CSSProperties = {
     height: 52,
-    minWidth: 120,
+    minWidth: 100,
     verticalAlign: 'top',
     padding: '4px',
-    transition: 'background 0.15s, box-shadow 0.15s',
+    transition: 'background 0.15s',
     borderLeft: isConflict
       ? '3px solid #f43f5e'
       : isOver && teacher
@@ -66,9 +66,10 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, conflicts 
       style={style}
       title={conflictTitle}
     >
-      {teacher && (
+      {teacher && subject !== null && (
         <DraggableTeacherChip
           teacher={teacher}
+          subject={subject}
           gradeId={gradeId}
           slotId={slotId}
           day={day}

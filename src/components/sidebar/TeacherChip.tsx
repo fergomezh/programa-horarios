@@ -7,6 +7,8 @@ interface Props {
 }
 
 export default function TeacherChip({ teacher, hasConflict, isOverlay }: Props) {
+  const subjectLabel = teacher.subjects.join(' · ')
+
   return (
     <div
       className={`
@@ -16,13 +18,14 @@ export default function TeacherChip({ teacher, hasConflict, isOverlay }: Props) 
         transition-all
       `}
     >
-      {/* Left color stripe */}
       <div className={`absolute left-0 inset-y-0 w-1 ${teacher.color}`} />
 
       <div className="flex items-center justify-between w-full pl-3 pr-2 py-2 gap-2">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-slate-100 truncate leading-tight">{teacher.name}</div>
-          <div className="text-xs text-slate-400 truncate leading-tight mt-0.5">{teacher.subject}</div>
+          <div className="text-xs text-slate-400 truncate leading-tight mt-0.5" title={subjectLabel}>
+            {subjectLabel}
+          </div>
         </div>
 
         {hasConflict && (
@@ -31,8 +34,7 @@ export default function TeacherChip({ teacher, hasConflict, isOverlay }: Props) 
           </div>
         )}
 
-        {/* Drag handle */}
-        <div className="flex-shrink-0 grid grid-cols-2 gap-0.5 opacity-25 group-hover:opacity-50 transition-opacity">
+        <div className="flex-shrink-0 grid grid-cols-2 gap-0.5 opacity-25">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="w-0.5 h-0.5 rounded-full bg-slate-400" />
           ))}

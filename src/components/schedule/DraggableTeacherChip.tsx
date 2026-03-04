@@ -5,6 +5,7 @@ import TeacherChip from './TeacherChip'
 
 interface Props {
   teacher: Teacher
+  subject: string
   gradeId: string
   slotId: string
   day: DayOfWeek
@@ -12,7 +13,7 @@ interface Props {
   onRemove: () => void
 }
 
-export default function DraggableTeacherChip({ teacher, gradeId, slotId, day, hasConflict, onRemove }: Props) {
+export default function DraggableTeacherChip({ teacher, subject, gradeId, slotId, day, hasConflict, onRemove }: Props) {
   const draggableId = `chip-${gradeId}-${slotId}-${day}`
 
   const data: DraggableTeacherData = {
@@ -45,7 +46,7 @@ export default function DraggableTeacherChip({ teacher, gradeId, slotId, day, ha
         onRemove()
       }}
     >
-      <TeacherChip teacher={teacher} hasConflict={hasConflict} />
+      <TeacherChip teacher={teacher} subject={subject} hasConflict={hasConflict} />
     </div>
   )
 }

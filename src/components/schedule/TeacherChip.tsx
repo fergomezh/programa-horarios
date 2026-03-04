@@ -2,11 +2,12 @@ import type { Teacher } from '../../types'
 
 interface Props {
   teacher: Teacher
+  subject: string
   isOverlay?: boolean
   hasConflict?: boolean
 }
 
-export default function TeacherChip({ teacher, isOverlay, hasConflict }: Props) {
+export default function TeacherChip({ teacher, subject, isOverlay, hasConflict }: Props) {
   return (
     <div
       className={`
@@ -21,16 +22,12 @@ export default function TeacherChip({ teacher, isOverlay, hasConflict }: Props) 
       <div className={`absolute left-0 inset-y-0 w-1.5 ${teacher.color}`} />
 
       <div className="pl-3 pr-1.5 py-1.5">
-        <div
-          className="text-xs font-semibold text-slate-800 truncate leading-tight"
-          title={teacher.name}
-        >
+        <div className="text-xs font-semibold text-slate-800 truncate leading-tight" title={teacher.name}>
           {teacher.name}
         </div>
-        <div className="text-xs text-slate-500 truncate leading-tight mt-0.5">{teacher.subject}</div>
+        <div className="text-xs text-slate-500 truncate leading-tight mt-0.5">{subject}</div>
       </div>
 
-      {/* Conflict indicator */}
       {hasConflict && (
         <div
           className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full conflict-dot"
