@@ -5,6 +5,7 @@ export interface Teacher {
   name: string
   subjects: string[]
   color: string
+  email?: string | null
 }
 
 export interface Grade {
@@ -53,4 +54,13 @@ export interface Conflict {
   slotId: string
   day: DayOfWeek
   gradeIds: string[]
+}
+
+export type UserRole = 'admin' | 'teacher'
+
+export interface AuthUser {
+  id: string
+  email: string
+  role: UserRole
+  teacherId: string | null
 }

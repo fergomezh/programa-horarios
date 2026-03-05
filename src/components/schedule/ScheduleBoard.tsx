@@ -1,9 +1,12 @@
 import { useScheduleStore } from '../../store/useScheduleStore'
 import { useConflicts } from '../../hooks/useConflicts'
 import ScheduleGrid from './ScheduleGrid'
+import PrintButton from '../pdf/PrintButton'
 
 export default function ScheduleBoard() {
   const grades = useScheduleStore((s) => s.grades)
+  const teachers = useScheduleStore((s) => s.teachers)
+  const assignments = useScheduleStore((s) => s.assignments)
   const activeGradeId = useScheduleStore((s) => s.activeGradeId)
   const setActiveGradeId = useScheduleStore((s) => s.setActiveGradeId)
   const loadSampleData = useScheduleStore((s) => s.loadSampleData)
@@ -81,15 +84,27 @@ export default function ScheduleBoard() {
           )
         })}
 
-        {/* Conflict count summary */}
-        {conflicts.size > 0 && (
-          <div className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 conflict-dot" />
-            <span className="text-xs font-semibold text-rose-600">
-              {conflicts.size} conflicto{conflicts.size !== 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
+        <div className="ml-auto flex-shrink-0 flex items-center gap-2">
+          {/* Conflict count summary */}
+          {conflicts.size > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-500 conflict-dot" />
+              <span className="text-xs font-semibold text-rose-600">
+                {conflicts.size} conflicto{conflicts.size !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
+
+          {/* PDF download for active grade */}
+          {activeGrade && (
+            <PrintButton
+              documentType="grade"
+              grade={activeGrade}
+              assignments={assignments}
+              teachers={teachers}
+            />
+          )}
+        </div>
       </div>
 
       {/* Schedule grid */}

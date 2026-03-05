@@ -28,6 +28,7 @@ useScheduleStore (Zustand + persist)
 
 **Conflict key format:** `teacherId::slotId::day`
 **Cell ID format:** `gradeId::slotId::day` (built/parsed via `src/utils/idHelpers.ts`)
+**Busy slot key format:** `slotId::day` (used in `DragHighlightContext`)
 
 ### Teacher subjects
 
@@ -47,11 +48,32 @@ Two drag sources:
 
 Drop targets: `ScheduleCell` via `useDroppable`. Break rows are **not** droppable.
 
+#### Conflict blocking
+
+Before calling `assignTeacher` or `moveAssignment`, `AppLayout.checkAndBlockConflict()` verifies the teacher has no existing assignment at the same `slotId + day` in any other grade. If blocked, shows `ConflictBlockModal` with the conflicting grade and subject, and cancels the drop.
+
+When moving a chip, the source slot is excluded from the check only when `sourceSlotId === targetSlotId && sourceDay === targetDay` (same-time cross-grade move).
+
+#### Drag highlight
+
+`DragHighlightContext` (`src/context/DragHighlightContext.ts`) is provided by `AppLayout` and consumed by every `ScheduleCell`. While dragging, it holds:
+- `draggingTeacherId` — ID of the teacher in flight
+- `busySlotKeys` — `Set<string>` of `slotId::day` keys where that teacher already has assignments (source cell excluded for chip moves)
+
+`ScheduleCell` uses this to apply visual highlights:
+- **Emerald tint** → safe cell (no conflict)
+- **Rose tint** → blocked cell (would conflict)
+- Brighter border + background on hover within each state
+
 ### Key constants
 
 - `src/constants/schedule.ts` — `TIME_SLOTS` (14 rows: 12 class + 2 breaks), `DAYS_OF_WEEK`, `TEACHER_COLORS` (12-color palette auto-assigned on `addTeacher`)
-- localStorage key: `lamatepec-horarios-v1`
+- localStorage key: `lamatepec-horarios-v2`
 - `activeGradeId` is **not** persisted (excluded via `partialize` in the store)
+
+### Responsive layout
+
+The sidebar is `fixed` on mobile and `relative` on `md+` (Tailwind breakpoint). On mobile a top bar with a hamburger button toggles `sidebarOpen` state in `AppLayout`, sliding in the sidebar as a drawer with a backdrop overlay. Modals use `w-full max-w-sm mx-4` so they fit narrow screens.
 
 ### Tailwind
 

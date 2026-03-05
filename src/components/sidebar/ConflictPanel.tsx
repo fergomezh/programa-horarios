@@ -86,10 +86,6 @@ export default function ConflictPanel() {
             const teacher = teacherMap.get(c.teacherId)
             const slot = TIME_SLOTS.find((s) => s.id === c.slotId)
             const day = DAYS_OF_WEEK.find((d) => d.id === c.day)
-            const gradeLabels = c.gradeIds
-              .map((id) => gradeMap.get(id)?.label ?? '?')
-              .join(' y ')
-
             return (
               <div
                 key={i}

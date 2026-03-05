@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -15,6 +15,8 @@ import MainContent from './MainContent'
 import TeacherChip from '../schedule/TeacherChip'
 import SubjectPicker from '../schedule/SubjectPicker'
 import ConflictBlockModal from '../schedule/ConflictBlockModal'
+import { DragHighlightContext } from '../../context/DragHighlightContext'
+import { useAuth } from '../../hooks/useAuth'
 
 interface PendingDrop {
   teacherId: string
@@ -36,11 +38,18 @@ export default function AppLayout() {
   const assignments = useScheduleStore((s) => s.assignments)
   const assignTeacher = useScheduleStore((s) => s.assignTeacher)
   const moveAssignment = useScheduleStore((s) => s.moveAssignment)
+  const initStore = useScheduleStore((s) => s.initStore)
+
+  const { user, logout } = useAuth()
 
   const [draggingData, setDraggingData] = useState<DraggableTeacherData | null>(null)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
   const [conflictBlocked, setConflictBlocked] = useState<ConflictBlocked | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    initStore()
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -50,6 +59,28 @@ export default function AppLayout() {
   const gradeMap = new Map(grades.map((g) => [g.id, g]))
   const draggingTeacher = draggingData ? (teacherMap.get(draggingData.teacherId) ?? null) : null
   const pendingTeacher = pendingDrop ? (teacherMap.get(pendingDrop.teacherId) ?? null) : null
+
+  /**
+   * Slots ocupados por el profesor que se está arrastrando.
+   * Excluye la celda origen cuando es un movimiento de chip (esa se vaciará).
+   */
+  const busySlotKeys = useMemo<Set<string>>(() => {
+    if (!draggingData) return new Set()
+    const { teacherId, sourceGradeId, sourceSlotId, sourceDay } = draggingData
+    const keys = new Set<string>()
+    for (const a of assignments) {
+      if (a.teacherId !== teacherId) continue
+      // Si viene de una celda, ese slot quedará libre — no lo marcamos como ocupado
+      if (
+        sourceGradeId !== null &&
+        a.gradeId === sourceGradeId &&
+        a.slotId === sourceSlotId &&
+        a.day === sourceDay
+      ) continue
+      keys.add(`${a.slotId}::${a.day}`)
+    }
+    return keys
+  }, [draggingData, assignments])
 
   function handleDragStart(event: DragStartEvent) {
     const data = event.active.data.current as DraggableTeacherData | undefined
@@ -156,7 +187,13 @@ export default function AppLayout() {
       }))
     : []
 
+  const dragHighlightValue = useMemo(
+    () => ({ draggingTeacherId: draggingData?.teacherId ?? null, busySlotKeys }),
+    [draggingData, busySlotKeys],
+  )
+
   return (
+    <DragHighlightContext.Provider value={dragHighlightValue}>
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex h-screen overflow-hidden relative" style={{ background: '#f1f5f9' }}>
 
@@ -200,6 +237,23 @@ export default function AppLayout() {
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* User info + logout */}
+          <div className="px-3 py-2 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid #1e2d42' }}>
+            <div className="min-w-0">
+              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+              <p className="text-xs text-blue-500 font-medium">Admin</p>
+            </div>
+            <button
+              onClick={logout}
+              title="Cerrar sesión"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-400 hover:bg-white/5 transition-colors flex-shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
           </div>
@@ -277,5 +331,6 @@ export default function AppLayout() {
         />
       )}
     </DndContext>
+    </DragHighlightContext.Provider>
   )
 }

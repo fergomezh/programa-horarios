@@ -5,6 +5,7 @@ import { buildCellId } from '../../utils/idHelpers'
 import DraggableTeacherChip from './DraggableTeacherChip'
 import { useScheduleStore } from '../../store/useScheduleStore'
 import { DAYS_OF_WEEK, TIME_SLOTS } from '../../constants/schedule'
+import { useDragHighlight } from '../../context/DragHighlightContext'
 
 interface Props {
   gradeId: string
@@ -18,6 +19,8 @@ interface Props {
 export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, conflicts }: Props) {
   const removeAssignment = useScheduleStore((s) => s.removeAssignment)
   const grades = useScheduleStore((s) => s.grades)
+
+  const { draggingTeacherId, busySlotKeys } = useDragHighlight()
 
   const cellId = buildCellId(gradeId, slotId, day)
   const data: DroppableCellData = { type: 'cell', gradeId, slotId, day }
@@ -37,32 +40,53 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, c
     conflictTitle = `⚠ Conflicto: ${teacher.name} — ${dayLabel} · ${slot?.label} — Grados: ${gradeLabels}`
   }
 
+  // Estados de highlight para drag-and-drop
+  const isDragging = draggingTeacherId !== null
+  const slotKey = `${slotId}::${day}`
+  const isSafeTarget = isDragging && !busySlotKeys.has(slotKey)
+  const isBlockedTarget = isDragging && busySlotKeys.has(slotKey)
+
+  let borderLeft: string | undefined
+  let background: string | undefined
+
+  if (isConflict) {
+    // Conflicto ya existente en el horario guardado
+    borderLeft = '3px solid #f43f5e'
+    background = '#fff1f2'
+  } else if (isOver && isSafeTarget) {
+    // Arrastrando encima de una celda válida → verde vibrante
+    borderLeft = '3px solid #10b981'
+    background = '#d1fae5'
+  } else if (isOver && isBlockedTarget) {
+    // Arrastrando encima de una celda bloqueada → rosa
+    borderLeft = '3px solid #f43f5e'
+    background = '#fff1f2'
+  } else if (isOver) {
+    // Fallback hover sin drag
+    borderLeft = '3px solid #3b82f6'
+    background = '#eff6ff'
+  } else if (isSafeTarget) {
+    // Celda válida durante drag pero sin hover → tinte verde sutil
+    background = 'rgba(16,185,129,0.09)'
+  } else if (isBlockedTarget) {
+    // Celda bloqueada durante drag → tinte rojo muy sutil
+    background = 'rgba(244,63,94,0.05)'
+  }
+
   const style: React.CSSProperties = {
     height: 52,
     minWidth: 100,
     verticalAlign: 'top',
     padding: '4px',
-    transition: 'background 0.15s',
-    borderLeft: isConflict
-      ? '3px solid #f43f5e'
-      : isOver && teacher
-        ? '3px solid #f59e0b'
-        : isOver
-          ? '3px solid #3b82f6'
-          : undefined,
-    background: isConflict
-      ? '#fff1f2'
-      : isOver && teacher
-        ? '#fffbeb'
-        : isOver
-          ? '#eff6ff'
-          : undefined,
+    transition: 'background 0.12s, border-left 0.12s',
+    borderLeft,
+    background,
   }
 
   return (
     <td
       ref={setNodeRef}
-      className="border border-slate-200 hover:bg-slate-50/60 transition-colors"
+      className={`border border-slate-200 transition-colors ${!isDragging ? 'hover:bg-slate-50/60' : ''}`}
       style={style}
       title={conflictTitle}
     >

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useScheduleStore } from '../../store/useScheduleStore'
 import ConfirmDialog from './ConfirmDialog'
+import CreateAccountModal from './CreateAccountModal'
+import ViewAccountModal from './ViewAccountModal'
+import type { Teacher } from '../../types'
 
 export default function TeacherManager() {
   const teachers = useScheduleStore((s) => s.teachers)
@@ -13,6 +16,8 @@ export default function TeacherManager() {
   const [editSubjects, setEditSubjects] = useState<string[]>([])
   const [editSubjectInput, setEditSubjectInput] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [createAccountTeacher, setCreateAccountTeacher] = useState<Teacher | null>(null)
+  const [viewAccountTeacher, setViewAccountTeacher] = useState<Teacher | null>(null)
 
   // "Add new" row state
   const [newName, setNewName] = useState('')
@@ -117,13 +122,14 @@ export default function TeacherManager() {
             <th className="border border-gray-200 px-3 py-2 w-8"></th>
             <th className="border border-gray-200 px-3 py-2">Nombre</th>
             <th className="border border-gray-200 px-3 py-2">Materias</th>
+            <th className="border border-gray-200 px-3 py-2 w-24">Cuenta</th>
             <th className="border border-gray-200 px-3 py-2 w-24">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {teachers.length === 0 && (
             <tr>
-              <td colSpan={4} className="text-center text-gray-400 py-6 text-xs">
+              <td colSpan={5} className="text-center text-gray-400 py-6 text-xs">
                 Sin profesores registrados
               </td>
             </tr>
@@ -187,6 +193,23 @@ export default function TeacherManager() {
                 )}
               </td>
               <td className="border border-gray-200 px-3 py-2 whitespace-nowrap">
+                {t.email ? (
+                  <button
+                    onClick={() => setViewAccountTeacher(t)}
+                    className="text-xs text-emerald-600 hover:underline"
+                  >
+                    Ver cuenta
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setCreateAccountTeacher(t)}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Crear cuenta
+                  </button>
+                )}
+              </td>
+              <td className="border border-gray-200 px-3 py-2 whitespace-nowrap">
                 {editingId === t.id ? (
                   <>
                     <button onClick={saveEdit} disabled={editSubjects.length === 0} className="text-xs text-blue-600 hover:underline mr-2 disabled:opacity-40">
@@ -216,6 +239,20 @@ export default function TeacherManager() {
             setConfirmDeleteId(null)
           }}
           onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
+
+      {createAccountTeacher && (
+        <CreateAccountModal
+          teacher={createAccountTeacher}
+          onClose={() => setCreateAccountTeacher(null)}
+        />
+      )}
+
+      {viewAccountTeacher && (
+        <ViewAccountModal
+          teacher={viewAccountTeacher}
+          onClose={() => setViewAccountTeacher(null)}
         />
       )}
     </div>

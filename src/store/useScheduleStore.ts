@@ -1,28 +1,32 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { Assignment, DayOfWeek, Grade, Teacher } from '../types'
 import { TEACHER_COLORS } from '../constants/schedule'
+import { supabase } from '../lib/supabase'
 
 interface ScheduleState {
   teachers: Teacher[]
   grades: Grade[]
   assignments: Assignment[]
   activeGradeId: string | null
+  storeError: string | null
+
+  // Init
+  initStore: () => Promise<void>
 
   // Teacher actions
-  addTeacher: (name: string, subjects: string[]) => void
-  updateTeacher: (id: string, name: string, subjects: string[]) => void
-  removeTeacher: (id: string) => void
+  addTeacher: (name: string, subjects: string[]) => Promise<void>
+  updateTeacher: (id: string, name: string, subjects: string[]) => Promise<void>
+  removeTeacher: (id: string) => Promise<void>
 
   // Grade actions
-  addGrade: (name: string, section: string) => void
-  updateGrade: (id: string, name: string, section: string) => void
-  removeGrade: (id: string) => void
+  addGrade: (name: string, section: string) => Promise<void>
+  updateGrade: (id: string, name: string, section: string) => Promise<void>
+  removeGrade: (id: string) => Promise<void>
   setActiveGradeId: (id: string | null) => void
 
   // Assignment actions
-  assignTeacher: (gradeId: string, slotId: string, day: DayOfWeek, teacherId: string, subject: string) => void
-  removeAssignment: (gradeId: string, slotId: string, day: DayOfWeek) => void
+  assignTeacher: (gradeId: string, slotId: string, day: DayOfWeek, teacherId: string, subject: string) => Promise<void>
+  removeAssignment: (gradeId: string, slotId: string, day: DayOfWeek) => Promise<void>
   moveAssignment: (
     sourceGradeId: string,
     sourceSlotId: string,
@@ -31,9 +35,9 @@ interface ScheduleState {
     targetSlotId: string,
     targetDay: DayOfWeek,
     teacherId: string,
-  ) => void
+  ) => Promise<void>
 
-  loadSampleData: () => void
+  loadSampleData: () => Promise<void>
 }
 
 let colorIndex = 0
@@ -41,10 +45,6 @@ function nextColor(): string {
   const color = TEACHER_COLORS[colorIndex % TEACHER_COLORS.length]
   colorIndex++
   return color
-}
-
-function uid(): string {
-  return Math.random().toString(36).slice(2, 9)
 }
 
 const SAMPLE_TEACHERS: Omit<Teacher, 'id'>[] = [
@@ -63,160 +63,254 @@ const SAMPLE_GRADES: Omit<Grade, 'id'>[] = [
   { name: '4°', section: 'A', label: '4°A' },
 ]
 
-export const useScheduleStore = create<ScheduleState>()(
-  persist(
-    (set, get) => ({
-      teachers: [],
-      grades: [],
-      assignments: [],
-      activeGradeId: null,
+// Map DB snake_case rows → camelCase types
+function rowToTeacher(row: Record<string, unknown>): Teacher {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    subjects: row.subjects as string[],
+    color: row.color as string,
+    email: (row.email as string | null) ?? null,
+  }
+}
 
-      addTeacher(name, subjects) {
-        const teacher: Teacher = {
-          id: uid(),
-          name,
-          subjects,
-          color: nextColor(),
-        }
-        set((s) => ({ teachers: [...s.teachers, teacher] }))
-      },
+function rowToGrade(row: Record<string, unknown>): Grade {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    section: row.section as string,
+    label: row.label as string,
+  }
+}
 
-      updateTeacher(id, name, subjects) {
-        set((s) => ({
-          teachers: s.teachers.map((t) => (t.id === id ? { ...t, name, subjects } : t)),
-        }))
-      },
+function rowToAssignment(row: Record<string, unknown>): Assignment {
+  return {
+    id: row.id as string,
+    gradeId: row.grade_id as string,
+    slotId: row.slot_id as string,
+    day: row.day as DayOfWeek,
+    teacherId: row.teacher_id as string,
+    subject: row.subject as string,
+  }
+}
 
-      removeTeacher(id) {
-        set((s) => ({
-          teachers: s.teachers.filter((t) => t.id !== id),
-          assignments: s.assignments.filter((a) => a.teacherId !== id),
-        }))
-      },
+export const useScheduleStore = create<ScheduleState>()((set, get) => ({
+  teachers: [],
+  grades: [],
+  assignments: [],
+  activeGradeId: null,
+  storeError: null,
 
-      addGrade(name, section) {
-        const grade: Grade = {
-          id: uid(),
-          name,
-          section,
-          label: `${name}${section}`,
-        }
-        set((s) => {
-          const grades = [...s.grades, grade]
-          return {
-            grades,
-            activeGradeId: s.activeGradeId ?? grade.id,
-          }
+  async initStore() {
+    const [teachersRes, gradesRes, assignmentsRes] = await Promise.all([
+      supabase.from('teachers').select('*').order('name'),
+      supabase.from('grades').select('*').order('label'),
+      supabase.from('assignments').select('*'),
+    ])
+
+    if (teachersRes.error || gradesRes.error || assignmentsRes.error) {
+      const msg = teachersRes.error?.message ?? gradesRes.error?.message ?? assignmentsRes.error?.message ?? 'Error loading data'
+      set({ storeError: msg })
+      return
+    }
+
+    const teachers = (teachersRes.data ?? []).map(rowToTeacher)
+    const grades = (gradesRes.data ?? []).map(rowToGrade)
+    const assignments = (assignmentsRes.data ?? []).map(rowToAssignment)
+
+    // Sync colorIndex past the last used color
+    colorIndex = teachers.length % TEACHER_COLORS.length
+
+    set({
+      teachers,
+      grades,
+      assignments,
+      activeGradeId: grades[0]?.id ?? null,
+      storeError: null,
+    })
+  },
+
+  async addTeacher(name, subjects) {
+    const color = nextColor()
+    const { data, error } = await supabase
+      .from('teachers')
+      .insert({ name, subjects, color })
+      .select()
+      .single()
+    if (error || !data) { set({ storeError: error?.message ?? 'Error adding teacher' }); return }
+    set((s) => ({ teachers: [...s.teachers, rowToTeacher(data)] }))
+  },
+
+  async updateTeacher(id, name, subjects) {
+    const { error } = await supabase
+      .from('teachers')
+      .update({ name, subjects })
+      .eq('id', id)
+    if (error) { set({ storeError: error.message }); return }
+    set((s) => ({
+      teachers: s.teachers.map((t) => (t.id === id ? { ...t, name, subjects } : t)),
+    }))
+  },
+
+  async removeTeacher(id) {
+    const { error } = await supabase.from('teachers').delete().eq('id', id)
+    if (error) { set({ storeError: error.message }); return }
+    set((s) => ({
+      teachers: s.teachers.filter((t) => t.id !== id),
+      assignments: s.assignments.filter((a) => a.teacherId !== id),
+    }))
+  },
+
+  async addGrade(name, section) {
+    const label = `${name}${section}`
+    const { data, error } = await supabase
+      .from('grades')
+      .insert({ name, section, label })
+      .select()
+      .single()
+    if (error || !data) { set({ storeError: error?.message ?? 'Error adding grade' }); return }
+    const grade = rowToGrade(data)
+    set((s) => ({
+      grades: [...s.grades, grade],
+      activeGradeId: s.activeGradeId ?? grade.id,
+    }))
+  },
+
+  async updateGrade(id, name, section) {
+    const label = `${name}${section}`
+    const { error } = await supabase
+      .from('grades')
+      .update({ name, section, label })
+      .eq('id', id)
+    if (error) { set({ storeError: error.message }); return }
+    set((s) => ({
+      grades: s.grades.map((g) => (g.id === id ? { ...g, name, section, label } : g)),
+    }))
+  },
+
+  async removeGrade(id) {
+    const { error } = await supabase.from('grades').delete().eq('id', id)
+    if (error) { set({ storeError: error.message }); return }
+    set((s) => {
+      const grades = s.grades.filter((g) => g.id !== id)
+      const activeGradeId = s.activeGradeId === id ? (grades[0]?.id ?? null) : s.activeGradeId
+      return {
+        grades,
+        assignments: s.assignments.filter((a) => a.gradeId !== id),
+        activeGradeId,
+      }
+    })
+  },
+
+  setActiveGradeId(id) {
+    set({ activeGradeId: id })
+  },
+
+  async assignTeacher(gradeId, slotId, day, teacherId, subject) {
+    // Upsert by unique constraint (grade_id, slot_id, day)
+    const { data, error } = await supabase
+      .from('assignments')
+      .upsert({ grade_id: gradeId, slot_id: slotId, day, teacher_id: teacherId, subject }, {
+        onConflict: 'grade_id,slot_id,day',
+      })
+      .select()
+      .single()
+    if (error || !data) { set({ storeError: error?.message ?? 'Error assigning teacher' }); return }
+    const newAssignment = rowToAssignment(data)
+    set((s) => {
+      const others = s.assignments.filter(
+        (a) => !(a.gradeId === gradeId && a.slotId === slotId && a.day === day),
+      )
+      return { assignments: [...others, newAssignment] }
+    })
+  },
+
+  async removeAssignment(gradeId, slotId, day) {
+    const { error } = await supabase
+      .from('assignments')
+      .delete()
+      .eq('grade_id', gradeId)
+      .eq('slot_id', slotId)
+      .eq('day', day)
+    if (error) { set({ storeError: error.message }); return }
+    set((s) => ({
+      assignments: s.assignments.filter(
+        (a) => !(a.gradeId === gradeId && a.slotId === slotId && a.day === day),
+      ),
+    }))
+  },
+
+  async moveAssignment(sourceGradeId, sourceSlotId, sourceDay, targetGradeId, targetSlotId, targetDay, teacherId) {
+    if (sourceGradeId === targetGradeId && sourceSlotId === targetSlotId && sourceDay === targetDay) return
+
+    const source = get().assignments.find(
+      (a) => a.gradeId === sourceGradeId && a.slotId === sourceSlotId && a.day === sourceDay,
+    )
+    const subject = source?.subject ?? ''
+
+    // Delete source, upsert target
+    const [delRes, upsertRes] = await Promise.all([
+      supabase
+        .from('assignments')
+        .delete()
+        .eq('grade_id', sourceGradeId)
+        .eq('slot_id', sourceSlotId)
+        .eq('day', sourceDay),
+      supabase
+        .from('assignments')
+        .upsert({ grade_id: targetGradeId, slot_id: targetSlotId, day: targetDay, teacher_id: teacherId, subject }, {
+          onConflict: 'grade_id,slot_id,day',
         })
-      },
+        .select()
+        .single(),
+    ])
 
-      updateGrade(id, name, section) {
-        set((s) => ({
-          grades: s.grades.map((g) =>
-            g.id === id ? { ...g, name, section, label: `${name}${section}` } : g,
-          ),
-        }))
-      },
+    if (delRes.error || upsertRes.error) {
+      set({ storeError: delRes.error?.message ?? upsertRes.error?.message ?? 'Error moving assignment' })
+      return
+    }
 
-      removeGrade(id) {
-        set((s) => {
-          const grades = s.grades.filter((g) => g.id !== id)
-          let activeGradeId = s.activeGradeId
-          if (activeGradeId === id) {
-            activeGradeId = grades[0]?.id ?? null
-          }
-          return {
-            grades,
-            assignments: s.assignments.filter((a) => a.gradeId !== id),
-            activeGradeId,
-          }
-        })
-      },
+    const newAssignment = rowToAssignment(upsertRes.data)
+    set((s) => {
+      const filtered = s.assignments.filter(
+        (a) =>
+          !(a.gradeId === sourceGradeId && a.slotId === sourceSlotId && a.day === sourceDay) &&
+          !(a.gradeId === targetGradeId && a.slotId === targetSlotId && a.day === targetDay),
+      )
+      return { assignments: [...filtered, newAssignment] }
+    })
+  },
 
-      setActiveGradeId(id) {
-        set({ activeGradeId: id })
-      },
+  async loadSampleData() {
+    const existingCount = get().teachers.length
 
-      assignTeacher(gradeId, slotId, day, teacherId, subject) {
-        set((s) => {
-          const others = s.assignments.filter(
-            (a) => !(a.gradeId === gradeId && a.slotId === slotId && a.day === day),
-          )
-          const newAssignment: Assignment = {
-            id: uid(),
-            gradeId,
-            slotId,
-            day,
-            teacherId,
-            subject,
-          }
-          return { assignments: [...others, newAssignment] }
-        })
-      },
+    // Insert teachers
+    const teacherRows = SAMPLE_TEACHERS.map((t, i) => ({
+      name: t.name,
+      subjects: t.subjects,
+      color: TEACHER_COLORS[(existingCount + i) % TEACHER_COLORS.length],
+    }))
+    const { data: tData, error: tErr } = await supabase
+      .from('teachers')
+      .insert(teacherRows)
+      .select()
+    if (tErr || !tData) { set({ storeError: tErr?.message ?? 'Error loading sample teachers' }); return }
 
-      removeAssignment(gradeId, slotId, day) {
-        set((s) => ({
-          assignments: s.assignments.filter(
-            (a) => !(a.gradeId === gradeId && a.slotId === slotId && a.day === day),
-          ),
-        }))
-      },
+    const gradeRows = SAMPLE_GRADES.map((g) => ({ name: g.name, section: g.section, label: g.label }))
+    const { data: gData, error: gErr } = await supabase
+      .from('grades')
+      .insert(gradeRows)
+      .select()
+    if (gErr || !gData) { set({ storeError: gErr?.message ?? 'Error loading sample grades' }); return }
 
-      moveAssignment(sourceGradeId, sourceSlotId, sourceDay, targetGradeId, targetSlotId, targetDay, teacherId) {
-        if (
-          sourceGradeId === targetGradeId &&
-          sourceSlotId === targetSlotId &&
-          sourceDay === targetDay
-        ) {
-          return
-        }
-        set((s) => {
-          // Preserve the subject from the source assignment
-          const source = s.assignments.find(
-            (a) => a.gradeId === sourceGradeId && a.slotId === sourceSlotId && a.day === sourceDay,
-          )
-          const subject = source?.subject ?? ''
+    const teachers = tData.map(rowToTeacher)
+    const grades = gData.map(rowToGrade)
+    colorIndex = (existingCount + teachers.length) % TEACHER_COLORS.length
 
-          const filtered = s.assignments.filter(
-            (a) =>
-              !(a.gradeId === sourceGradeId && a.slotId === sourceSlotId && a.day === sourceDay) &&
-              !(a.gradeId === targetGradeId && a.slotId === targetSlotId && a.day === targetDay),
-          )
-          const newAssignment: Assignment = {
-            id: uid(),
-            gradeId: targetGradeId,
-            slotId: targetSlotId,
-            day: targetDay,
-            teacherId,
-            subject,
-          }
-          return { assignments: [...filtered, newAssignment] }
-        })
-      },
-
-      loadSampleData() {
-        const existingCount = get().teachers.length
-        const teachers: Teacher[] = SAMPLE_TEACHERS.map((t, i) => ({
-          ...t,
-          id: uid(),
-          color: TEACHER_COLORS[(existingCount + i) % TEACHER_COLORS.length],
-        }))
-        const grades: Grade[] = SAMPLE_GRADES.map((g) => ({ ...g, id: uid() }))
-        colorIndex = (existingCount + teachers.length) % TEACHER_COLORS.length
-        set((s) => ({
-          teachers: [...s.teachers, ...teachers],
-          grades: [...s.grades, ...grades],
-          activeGradeId: s.activeGradeId ?? grades[0]?.id ?? null,
-        }))
-      },
-    }),
-    {
-      name: 'lamatepec-horarios-v2',
-      partialize: (state) => ({
-        teachers: state.teachers,
-        grades: state.grades,
-        assignments: state.assignments,
-      }),
-    },
-  ),
-)
+    set((s) => ({
+      teachers: [...s.teachers, ...teachers],
+      grades: [...s.grades, ...grades],
+      activeGradeId: s.activeGradeId ?? grades[0]?.id ?? null,
+    }))
+  },
+}))
