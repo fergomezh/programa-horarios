@@ -21,6 +21,7 @@ import LimitBlockModal from '../schedule/LimitBlockModal'
 import OccupiedCellModal from '../schedule/OccupiedCellModal'
 import WelcomeToast from '../WelcomeToast'
 import TeacherScheduleModal from '../TeacherScheduleModal'
+import HelpModal from '../HelpModal'
 import { DragHighlightContext } from '../../context/DragHighlightContext'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -82,6 +83,7 @@ export default function AppLayout() {
   const [limitBlocked, setLimitBlocked] = useState<LimitBlocked | null>(null)
   const [occupiedCellBlocked, setOccupiedCellBlocked] = useState<OccupiedCellBlocked | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
     initStore()
@@ -448,7 +450,7 @@ export default function AppLayout() {
             </div>
           </div>
 
-          <MainContent activeTab={activeTab} onTabChange={setActiveTab} />
+          <MainContent activeTab={activeTab} onTabChange={setActiveTab} onHelpClick={() => setHelpOpen(true)} />
         </main>
       </div>
 
@@ -553,6 +555,7 @@ export default function AppLayout() {
     </DndContext>
     </DragHighlightContext.Provider>
     <WelcomeToast name={user?.email ?? ''} role="admin" />
+    {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
     {selectedTeacherModal && (
       <TeacherScheduleModal
         teacher={selectedTeacherModal}
