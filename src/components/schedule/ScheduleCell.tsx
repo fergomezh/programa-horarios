@@ -78,7 +78,7 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, c
     minWidth: 100,
     verticalAlign: 'top',
     padding: '4px',
-    transition: 'background 0.12s, border-left 0.12s',
+    transition: 'background 0.18s ease, border-left 0.18s ease',
     borderLeft,
     background,
   }

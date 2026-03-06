@@ -1,4 +1,5 @@
 import type { Teacher } from '../../types'
+import { getSubjectColor } from '../../constants/schedule'
 
 interface Props {
   teacher: Teacher
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function TeacherChip({ teacher, subject, isOverlay, hasConflict }: Props) {
+  const subjectColor = getSubjectColor(subject)
   return (
     <div
       className={`
@@ -19,7 +21,7 @@ export default function TeacherChip({ teacher, subject, isOverlay, hasConflict }
       style={{ minHeight: 38 }}
     >
       {/* Left color stripe */}
-      <div className={`absolute left-0 inset-y-0 w-1.5 ${teacher.color}`} />
+      <div className={`absolute left-0 inset-y-0 w-1.5 ${subjectColor}`} />
 
       <div className="pl-3 pr-1.5 py-1.5">
         <div className="text-xs font-semibold text-slate-800 truncate leading-tight" title={teacher.name}>

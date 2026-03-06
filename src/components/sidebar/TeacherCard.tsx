@@ -25,9 +25,10 @@ function DraggableCard({ teacher, hasConflict }: { teacher: Teacher; hasConflict
     data,
   })
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.35 : 1,
+  const style: React.CSSProperties = {
+    transform: isDragging ? undefined : CSS.Transform.toString(transform),
+    transition: isDragging ? undefined : 'transform 200ms ease',
+    opacity: isDragging ? 0 : 1,
   }
 
   return (

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Assignment, DayOfWeek, Grade, Teacher } from '../types'
-import { TEACHER_COLORS } from '../constants/schedule'
+import { getTeacherColor } from '../constants/schedule'
 import { supabase } from '../lib/supabase'
 
 interface ScheduleState {
@@ -44,24 +44,18 @@ interface ScheduleState {
 }
 
 
-let colorIndex = 0
-function nextColor(): string {
-  const color = TEACHER_COLORS[colorIndex % TEACHER_COLORS.length]
-  colorIndex++
-  return color
-}
 
 const SAMPLE_TEACHERS: Omit<Teacher, 'id'>[] = [
-  { name: 'Carlos Martínez',  subjects: ['Matemáticas', 'Física'],               color: TEACHER_COLORS[0] },
-  { name: 'Ana López',        subjects: ['Lenguaje y Literatura'],                color: TEACHER_COLORS[1] },
-  { name: 'María García',     subjects: ['Inglés'],                               color: TEACHER_COLORS[2] },
-  { name: 'José Hernández',   subjects: ['Ciencias Naturales', 'Biología'],       color: TEACHER_COLORS[3] },
-  { name: 'Rosa Pérez',       subjects: ['Estudios Sociales', 'Historia'],        color: TEACHER_COLORS[4] },
-  { name: 'Miguel Torres',    subjects: ['Educación Física'],                     color: TEACHER_COLORS[5] },
-  { name: 'Carmen Flores',    subjects: ['Arte y Cultura', 'Música'],             color: TEACHER_COLORS[6] },
-  { name: 'Luis Rodríguez',   subjects: ['Informática', 'Tecnología'],            color: TEACHER_COLORS[7] },
-  { name: 'Diana Morales',    subjects: ['Química', 'Ciencias Naturales'],        color: TEACHER_COLORS[8] },
-  { name: 'Roberto Castillo', subjects: ['Religión', 'Moral y Ética'],            color: TEACHER_COLORS[9] },
+  { name: 'Carlos Martínez',  subjects: ['Matemáticas', 'Física'],               color: getTeacherColor('Carlos Martínez') },
+  { name: 'Ana López',        subjects: ['Lenguaje y Literatura'],                color: getTeacherColor('Ana López') },
+  { name: 'María García',     subjects: ['Inglés'],                               color: getTeacherColor('María García') },
+  { name: 'José Hernández',   subjects: ['Ciencias Naturales', 'Biología'],       color: getTeacherColor('José Hernández') },
+  { name: 'Rosa Pérez',       subjects: ['Estudios Sociales', 'Historia'],        color: getTeacherColor('Rosa Pérez') },
+  { name: 'Miguel Torres',    subjects: ['Educación Física'],                     color: getTeacherColor('Miguel Torres') },
+  { name: 'Carmen Flores',    subjects: ['Arte y Cultura', 'Música'],             color: getTeacherColor('Carmen Flores') },
+  { name: 'Luis Rodríguez',   subjects: ['Informática', 'Tecnología'],            color: getTeacherColor('Luis Rodríguez') },
+  { name: 'Diana Morales',    subjects: ['Química', 'Ciencias Naturales'],        color: getTeacherColor('Diana Morales') },
+  { name: 'Roberto Castillo', subjects: ['Religión', 'Moral y Ética'],            color: getTeacherColor('Roberto Castillo') },
 ]
 
 const SAMPLE_GRADES: Omit<Grade, 'id'>[] = Array.from({ length: 12 }, (_, i) => {
@@ -153,6 +147,18 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
     const grades = (gradesRes.data ?? []).map(rowToGrade)
     const assignments = (assignmentsRes.data ?? []).map(rowToAssignment)
 
+    // Ensure each teacher has a unique color based on their name
+    for (const teacher of teachers) {
+      const uniqueColor = getTeacherColor(teacher.name)
+      if (teacher.color !== uniqueColor) {
+        await supabase
+          .from('teachers')
+          .update({ color: uniqueColor })
+          .eq('id', teacher.id)
+        teacher.color = uniqueColor
+      }
+    }
+
     // Build subjectLimits map from flat rows
     const subjectLimits: Record<string, Record<string, number>> = {}
     for (const row of limitsRes.data ?? []) {
@@ -162,9 +168,6 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
       if (!subjectLimits[gradeId]) subjectLimits[gradeId] = {}
       subjectLimits[gradeId][subject] = limitHours
     }
-
-    // Sync colorIndex past the last used color
-    colorIndex = teachers.length % TEACHER_COLORS.length
 
     set({
       teachers,
@@ -178,7 +181,7 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
   },
 
   async addTeacher(name, subjects) {
-    const color = nextColor()
+    const color = getTeacherColor(name)
     const { data, error } = await supabase
       .from('teachers')
       .insert({ name, subjects, color })
@@ -343,13 +346,12 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
   async loadSampleData() {
     // Guard: never insert if data already exists
     if (get().teachers.length > 0 || get().grades.length > 0) return
-    const existingCount = 0
 
     // Insert teachers
-    const teacherRows = SAMPLE_TEACHERS.map((t, i) => ({
+    const teacherRows = SAMPLE_TEACHERS.map((t) => ({
       name: t.name,
       subjects: t.subjects,
-      color: TEACHER_COLORS[(existingCount + i) % TEACHER_COLORS.length],
+      color: getTeacherColor(t.name),
     }))
     const { data: tData, error: tErr } = await supabase
       .from('teachers')
@@ -366,7 +368,6 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
 
     const teachers = tData.map(rowToTeacher)
     const grades = gData.map(rowToGrade)
-    colorIndex = (existingCount + teachers.length) % TEACHER_COLORS.length
 
     set((s) => ({
       teachers: [...s.teachers, ...teachers],

@@ -4,6 +4,7 @@ import ConfirmDialog from './ConfirmDialog'
 import CreateAccountModal from './CreateAccountModal'
 import ViewAccountModal from './ViewAccountModal'
 import type { Teacher } from '../../types'
+import { getSubjectColor } from '../../constants/schedule'
 
 export default function TeacherManager() {
   const teachers = useScheduleStore((s) => s.teachers)
@@ -137,7 +138,7 @@ export default function TeacherManager() {
           {teachers.map((t) => (
             <tr key={t.id} className="hover:bg-gray-50 align-top">
               <td className="border border-gray-200 px-3 py-2.5">
-                <span className={`inline-block w-3.5 h-3.5 rounded-full mt-0.5 ${t.color}`} />
+                <span className={`inline-block w-3.5 h-3.5 rounded-full mt-0.5 ${t.subjects[0] ? getSubjectColor(t.subjects[0]) : t.color}`} />
               </td>
               <td className="border border-gray-200 px-3 py-2">
                 {editingId === t.id ? (

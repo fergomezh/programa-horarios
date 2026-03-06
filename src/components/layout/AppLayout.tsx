@@ -7,6 +7,7 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
+  defaultDropAnimationSideEffects,
 } from '@dnd-kit/core'
 import { useScheduleStore } from '../../store/useScheduleStore'
 import type { DayOfWeek, DraggableTeacherData, DroppableCellData, Teacher } from '../../types'
@@ -451,9 +452,24 @@ export default function AppLayout() {
         </main>
       </div>
 
-      <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
+      <DragOverlay
+        dropAnimation={{
+          duration: 220,
+          easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+          sideEffects: defaultDropAnimationSideEffects({
+            styles: { active: { opacity: '0' } },
+          }),
+        }}
+      >
         {draggingTeacher && (
-          <div className="w-44">
+          <div
+            className="w-44"
+            style={{
+              transform: 'scale(1.06) rotate(2deg)',
+              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.22))',
+              transition: 'transform 150ms ease, filter 150ms ease',
+            }}
+          >
             <TeacherChip teacher={draggingTeacher} subject={draggingTeacher.subjects[0] ?? ''} isOverlay />
           </div>
         )}

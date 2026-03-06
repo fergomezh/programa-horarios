@@ -22,7 +22,7 @@ export const TIME_SLOTS: TimeSlot[] = [
   { id: 'slot-8', label: '8ª hora', startTime: '13:50', endTime: '14:25', isBreak: false },
 ]
 
-export const TEACHER_COLORS = [
+export const SUBJECT_COLORS = [
   'bg-blue-500',
   'bg-emerald-500',
   'bg-violet-500',
@@ -35,4 +35,28 @@ export const TEACHER_COLORS = [
   'bg-orange-500',
   'bg-lime-500',
   'bg-fuchsia-500',
+  'bg-sky-500',
+  'bg-green-500',
+  'bg-purple-500',
+  'bg-red-500',
+  'bg-yellow-500',
+  'bg-slate-500',
 ]
+
+export const TEACHER_COLORS = SUBJECT_COLORS
+
+export function getSubjectColor(subject: string): string {
+  let hash = 0
+  for (let i = 0; i < subject.length; i++) {
+    hash = subject.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return SUBJECT_COLORS[Math.abs(hash) % SUBJECT_COLORS.length]
+}
+
+export function getTeacherColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return TEACHER_COLORS[Math.abs(hash) % TEACHER_COLORS.length]
+}

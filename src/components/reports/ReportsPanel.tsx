@@ -15,11 +15,10 @@ import { TIME_SLOTS } from '../../constants/schedule'
 import {
   TeacherHoursReportPDF,
   TeacherSummaryReportPDF,
-  SubjectHoursReportPDF,
   GradeTeamReportPDF,
 } from '../pdf/ReportsPDF'
 
-type ReportTab = 'dashboard' | 'teacher-hours' | 'teacher-summary' | 'subject-hours' | 'grade-team'
+type ReportTab = 'dashboard' | 'teacher-hours' | 'teacher-summary' | 'grade-team'
 
 // Only class slots count as hours (no breaks)
 const CLASS_SLOT_IDS = new Set(TIME_SLOTS.filter((s) => !s.isBreak).map((s) => s.id))
@@ -53,11 +52,6 @@ export default function ReportsPanel() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         } />
-        <TabButton id="subject-hours" active={activeTab} onClick={setActiveTab} label="Por Materia" icon={
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-        } />
         <TabButton id="grade-team" active={activeTab} onClick={setActiveTab} label="Equipo Educador" icon={
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -69,7 +63,6 @@ export default function ReportsPanel() {
         {activeTab === 'dashboard' && <DashboardReport />}
         {activeTab === 'teacher-hours' && <TeacherHoursReport />}
         {activeTab === 'teacher-summary' && <TeacherSummaryReport />}
-        {activeTab === 'subject-hours' && <SubjectHoursReport />}
         {activeTab === 'grade-team' && <GradeTeamReport />}
       </div>
     </div>
@@ -367,10 +360,11 @@ function TeacherHoursReport() {
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('')
   const [downloading, setDownloading] = useState(false)
 
+  const isAll = selectedTeacherId === '__all__'
   const selectedTeacher = teachers.find((t) => t.id === selectedTeacherId) ?? null
 
   const breakdown = useMemo(() => {
-    if (!selectedTeacherId) return []
+    if (!selectedTeacherId || isAll) return []
     const gradeMap = new Map(grades.map((g) => [g.id, g]))
     const map = new Map<string, { gradeId: string; subject: string; hours: number }>()
 
@@ -393,7 +387,36 @@ function TeacherHoursReport() {
         hours: r.hours,
       }))
       .sort((a, b) => a.gradeLabel.localeCompare(b.gradeLabel) || a.subject.localeCompare(b.subject))
-  }, [selectedTeacherId, assignments, grades])
+  }, [selectedTeacherId, isAll, assignments, grades])
+
+  const allTeachersData = useMemo(() => {
+    if (!isAll) return []
+    const gradeMap = new Map(grades.map((g) => [g.id, g]))
+
+    return teachers.map((t) => {
+      const map = new Map<string, { gradeId: string; subject: string; hours: number }>()
+      for (const a of assignments) {
+        if (a.teacherId !== t.id) continue
+        if (!CLASS_SLOT_IDS.has(a.slotId)) continue
+        const key = `${a.gradeId}::${a.subject}`
+        const existing = map.get(key)
+        if (existing) {
+          existing.hours++
+        } else {
+          map.set(key, { gradeId: a.gradeId, subject: a.subject, hours: 1 })
+        }
+      }
+      const rows = Array.from(map.values())
+        .map((r) => ({
+          gradeLabel: gradeMap.get(r.gradeId)?.label ?? r.gradeId,
+          subject: r.subject,
+          hours: r.hours,
+        }))
+        .sort((a, b) => a.gradeLabel.localeCompare(b.gradeLabel) || a.subject.localeCompare(b.subject))
+      const total = rows.reduce((s, r) => s + r.hours, 0)
+      return { teacher: t, rows, total }
+    })
+  }, [isAll, teachers, assignments, grades])
 
   const totalHours = breakdown.reduce((s, r) => s + r.hours, 0)
 
@@ -434,12 +457,67 @@ function TeacherHoursReport() {
           className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">— Elegir profesor —</option>
+          <option value="__all__">Todos</option>
           {teachers.map((t) => (
             <option key={t.id} value={t.id}>{t.name}</option>
           ))}
         </select>
       </div>
 
+      {/* Vista: Todos los profesores */}
+      {isAll && (
+        <div className="space-y-4">
+          {allTeachersData.length === 0 ? (
+            <div className="bg-white rounded-xl border border-slate-200 px-4 py-6 text-sm text-slate-400 text-center">
+              No hay profesores registrados.
+            </div>
+          ) : (
+            <>
+              {allTeachersData.map(({ teacher, rows, total }) => (
+                <div key={teacher.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${teacher.color}`} />
+                    <span className="font-semibold text-slate-800 flex-1">{teacher.name}</span>
+                  </div>
+
+                  {rows.length === 0 ? (
+                    <p className="px-4 py-4 text-sm text-slate-400 text-center">
+                      Este profesor no tiene horas asignadas.
+                    </p>
+                  ) : (
+                    <>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200">
+                            <th className="text-left px-4 py-2">Sección</th>
+                            <th className="text-left px-4 py-2">Materia</th>
+                            <th className="text-right px-4 py-2">Horas / sem.</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {rows.map((row, i) => (
+                            <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="px-4 py-2.5 font-semibold text-slate-700">{row.gradeLabel}</td>
+                              <td className="px-4 py-2.5 text-slate-500">{row.subject}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums font-medium text-slate-800">{row.hours}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-blue-50">
+                        <span className="text-sm font-bold text-blue-800">Total</span>
+                        <span className="text-sm font-bold text-blue-800 tabular-nums">{total} horas</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Vista: Profesor individual */}
       {selectedTeacher && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
@@ -620,135 +698,6 @@ function TeacherSummaryReport() {
           </table>
         )}
       </div>
-    </div>
-  )
-}
-
-// ─── Report 3: Hours for a subject in a specific section per week ────────────
-
-function SubjectHoursReport() {
-  const grades = useScheduleStore((s) => s.grades)
-  const assignments = useScheduleStore((s) => s.assignments)
-
-  const [selectedGradeId, setSelectedGradeId] = useState<string>('')
-  const [selectedSubject, setSelectedSubject] = useState<string>('')
-  const [downloading, setDownloading] = useState(false)
-
-  const subjectsForGrade = useMemo(() => {
-    if (!selectedGradeId) return []
-    const set = new Set<string>()
-    for (const a of assignments) {
-      if (a.gradeId === selectedGradeId && CLASS_SLOT_IDS.has(a.slotId)) {
-        set.add(a.subject)
-      }
-    }
-    return Array.from(set).sort()
-  }, [selectedGradeId, assignments])
-
-  const handleGradeChange = (id: string) => {
-    setSelectedGradeId(id)
-    setSelectedSubject('')
-  }
-
-  const hoursPerWeek = useMemo(() => {
-    if (!selectedGradeId || !selectedSubject) return null
-    return assignments.filter(
-      (a) =>
-        a.gradeId === selectedGradeId &&
-        a.subject === selectedSubject &&
-        CLASS_SLOT_IDS.has(a.slotId),
-    ).length
-  }, [selectedGradeId, selectedSubject, assignments])
-
-  const selectedGrade = grades.find((g) => g.id === selectedGradeId)
-
-  async function handleDownloadPDF() {
-    if (hoursPerWeek === null || !selectedGrade || !selectedSubject) return
-    setDownloading(true)
-    try {
-      const blob = await pdf(
-        <SubjectHoursReportPDF grade={selectedGrade} subject={selectedSubject} hoursPerWeek={hoursPerWeek} />
-      ).toBlob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `reporte-materia-${selectedGrade.label.replace(/\s+/g, '-').toLowerCase()}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-    } finally {
-      setDownloading(false)
-    }
-  }
-
-  return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-slate-800">Horas de materia por sección</h2>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Número de horas semanales de una materia específica en una sección.
-        </p>
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
-        <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Sección</label>
-          <select
-            value={selectedGradeId}
-            onChange={(e) => handleGradeChange(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">— Elegir sección —</option>
-            {grades.map((g) => (
-              <option key={g.id} value={g.id}>{g.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {selectedGradeId && (
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Materia</label>
-            {subjectsForGrade.length === 0 ? (
-              <p className="text-sm text-slate-400">Esta sección no tiene asignaciones.</p>
-            ) : (
-              <select
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">— Elegir materia —</option>
-                {subjectsForGrade.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            )}
-          </div>
-        )}
-      </div>
-
-      {hoursPerWeek !== null && selectedGrade && selectedSubject && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-end">
-            <button
-              onClick={handleDownloadPDF}
-              disabled={downloading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors disabled:opacity-50"
-            >
-              {downloading ? 'Generando…' : '↓ Descargar PDF'}
-            </button>
-          </div>
-          <div className="p-6 flex flex-col items-center gap-1 text-center">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-              {selectedGrade.label} · {selectedSubject}
-            </p>
-            <p className="text-5xl font-black text-blue-600 tabular-nums leading-none mt-2">
-              {hoursPerWeek}
-            </p>
-            <p className="text-sm text-slate-500 mt-1">
-              {hoursPerWeek === 1 ? 'hora por semana' : 'horas por semana'}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
