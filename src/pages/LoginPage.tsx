@@ -12,8 +12,22 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
+    if (error) setError(friendlyError(error.message))
     setLoading(false)
+  }
+
+  function friendlyError(message: string): string {
+    const m = message.toLowerCase()
+    if (m.includes('invalid login credentials') || m.includes('invalid_credentials') || m.includes('user not found')) {
+      return 'Correo no registrado o contraseña incorrecta. Si no tienes una cuenta, comunícate con el administrador.'
+    }
+    if (m.includes('email not confirmed')) {
+      return 'El correo aún no ha sido confirmado. Contacta al administrador.'
+    }
+    if (m.includes('too many requests') || m.includes('rate limit')) {
+      return 'Demasiados intentos fallidos. Espera unos minutos e intenta de nuevo.'
+    }
+    return message
   }
 
   return (
@@ -68,9 +82,12 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-xs text-rose-400 bg-rose-950/50 border border-rose-900 rounded-lg px-3 py-2">
-              {error}
-            </p>
+            <div className="flex gap-2.5 text-xs text-rose-400 bg-rose-950/50 border border-rose-900 rounded-lg px-3 py-2.5">
+              <svg className="w-4 h-4 flex-shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              <span>{error}</span>
+            </div>
           )}
 
           <button

@@ -9,14 +9,23 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { useScheduleStore } from '../../store/useScheduleStore'
-import type { DayOfWeek, DraggableTeacherData, DroppableCellData } from '../../types'
+import type { DayOfWeek, DraggableTeacherData, DroppableCellData, Teacher } from '../../types'
+import { TIME_SLOTS } from '../../constants/schedule'
 import TeacherPanel from '../sidebar/TeacherPanel'
 import MainContent from './MainContent'
 import TeacherChip from '../schedule/TeacherChip'
 import SubjectPicker from '../schedule/SubjectPicker'
 import ConflictBlockModal from '../schedule/ConflictBlockModal'
+import LimitBlockModal from '../schedule/LimitBlockModal'
+import OccupiedCellModal from '../schedule/OccupiedCellModal'
+import WelcomeToast from '../WelcomeToast'
+import TeacherScheduleModal from '../TeacherScheduleModal'
 import { DragHighlightContext } from '../../context/DragHighlightContext'
 import { useAuth } from '../../hooks/useAuth'
+
+export type MainTab = 'schedule' | 'manage' | 'reports'
+
+const CLASS_SLOT_IDS = new Set(TIME_SLOTS.filter((s) => !s.isBreak).map((s) => s.id))
 
 interface PendingDrop {
   teacherId: string
@@ -32,6 +41,26 @@ interface ConflictBlocked {
   conflictingEntries: { gradeId: string; subject: string }[]
 }
 
+interface LimitBlocked {
+  subject: string
+  gradeId: string
+  limit: number
+  currentCount: number
+}
+
+interface OccupiedCellBlocked {
+  targetGradeId: string
+  targetSlotId: string
+  targetDay: DayOfWeek
+  existingTeacherId: string
+  existingSubject: string
+  sourceTeacherId: string | null
+  sourceSubject: string
+  sourceGradeId: string | null
+  sourceSlotId: string | null
+  sourceDay: DayOfWeek | null
+}
+
 export default function AppLayout() {
   const teachers = useScheduleStore((s) => s.teachers)
   const grades = useScheduleStore((s) => s.grades)
@@ -39,12 +68,18 @@ export default function AppLayout() {
   const assignTeacher = useScheduleStore((s) => s.assignTeacher)
   const moveAssignment = useScheduleStore((s) => s.moveAssignment)
   const initStore = useScheduleStore((s) => s.initStore)
+  const isLoading = useScheduleStore((s) => s.isLoading)
+  const subjectLimits = useScheduleStore((s) => s.subjectLimits)
 
   const { user, logout } = useAuth()
 
+  const [activeTab, setActiveTab] = useState<MainTab>('reports')
+  const [selectedTeacherModal, setSelectedTeacherModal] = useState<Teacher | null>(null)
   const [draggingData, setDraggingData] = useState<DraggableTeacherData | null>(null)
   const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
   const [conflictBlocked, setConflictBlocked] = useState<ConflictBlocked | null>(null)
+  const [limitBlocked, setLimitBlocked] = useState<LimitBlocked | null>(null)
+  const [occupiedCellBlocked, setOccupiedCellBlocked] = useState<OccupiedCellBlocked | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
@@ -118,6 +153,79 @@ export default function AppLayout() {
     return true
   }
 
+  function checkAndBlockOccupiedCell(
+    targetGradeId: string,
+    targetSlotId: string,
+    targetDay: DayOfWeek,
+    sourceTeacherId: string | null,
+    sourceGradeId: string | null,
+    sourceSlotId: string | null,
+    sourceDay: DayOfWeek | null,
+  ): boolean {
+    const existing = assignments.find(
+      (a) =>
+        a.gradeId === targetGradeId &&
+        a.slotId === targetSlotId &&
+        a.day === targetDay &&
+        !(sourceGradeId === targetGradeId && sourceSlotId === targetSlotId && sourceDay === targetDay),
+    )
+    if (existing && sourceTeacherId) {
+      let sourceSubject = ''
+      if (sourceGradeId && sourceSlotId && sourceDay) {
+        const sourceAssignment = assignments.find(
+          (a) => a.gradeId === sourceGradeId && a.slotId === sourceSlotId && a.day === sourceDay,
+        )
+        sourceSubject = sourceAssignment?.subject ?? ''
+      } else {
+        const sourceTeacher = teacherMap.get(sourceTeacherId)
+        sourceSubject = sourceTeacher?.subjects[0] ?? ''
+      }
+      setOccupiedCellBlocked({
+        targetGradeId,
+        targetSlotId,
+        targetDay,
+        existingTeacherId: existing.teacherId,
+        existingSubject: existing.subject,
+        sourceTeacherId,
+        sourceSubject,
+        sourceGradeId,
+        sourceSlotId,
+        sourceDay,
+      })
+      return false
+    }
+    return true
+  }
+
+  /**
+   * Returns true if the assignment is allowed.
+   * Returns false and shows the limit modal if this would exceed the subject's weekly limit.
+   * sourceGradeId/sourceSlotId/sourceDay: set for chip moves (source slot is excluded from count).
+   */
+  function checkAndBlockLimit(
+    subject: string,
+    targetGradeId: string,
+    sourceGradeId: string | null,
+    sourceSlotId: string | null,
+    sourceDay: DayOfWeek | null,
+  ): boolean {
+    const limits = subjectLimits[targetGradeId]
+    if (!limits || !(subject in limits)) return true
+    const limit = limits[subject]
+    const currentCount = assignments.filter(
+      (a) =>
+        a.gradeId === targetGradeId &&
+        a.subject === subject &&
+        CLASS_SLOT_IDS.has(a.slotId) &&
+        !(sourceGradeId === targetGradeId && a.slotId === sourceSlotId && a.day === sourceDay),
+    ).length
+    if (currentCount >= limit) {
+      setLimitBlocked({ subject, gradeId: targetGradeId, limit, currentCount })
+      return false
+    }
+    return true
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     setDraggingData(null)
     const { active, over } = event
@@ -139,8 +247,12 @@ export default function AppLayout() {
 
       if (!checkAndBlockConflict(teacherId, targetGradeId, targetSlotId, targetDay, null)) return
 
+      if (!checkAndBlockOccupiedCell(targetGradeId, targetSlotId, targetDay, teacherId, null, null, null)) return
+
       if (teacher.subjects.length === 1) {
-        assignTeacher(targetGradeId, targetSlotId, targetDay, teacherId, teacher.subjects[0])
+        const subject = teacher.subjects[0]
+        if (!checkAndBlockLimit(subject, targetGradeId, null, null, null)) return
+        assignTeacher(targetGradeId, targetSlotId, targetDay, teacherId, subject)
       } else {
         setPendingDrop({ teacherId, gradeId: targetGradeId, slotId: targetSlotId, day: targetDay })
       }
@@ -160,6 +272,16 @@ export default function AppLayout() {
 
       if (!checkAndBlockConflict(teacherId, targetGradeId, targetSlotId, targetDay, excludeGrade)) return
 
+      if (!checkAndBlockOccupiedCell(targetGradeId, targetSlotId, targetDay, teacherId, sourceGradeId, sourceSlotId, sourceDay)) return
+
+      // Find the subject being moved
+      const sourceAssignment = assignments.find(
+        (a) => a.gradeId === sourceGradeId && a.slotId === sourceSlotId && a.day === sourceDay,
+      )
+      if (sourceAssignment) {
+        if (!checkAndBlockLimit(sourceAssignment.subject, targetGradeId, sourceGradeId, sourceSlotId, sourceDay)) return
+      }
+
       moveAssignment(
         sourceGradeId,
         sourceSlotId!,
@@ -175,8 +297,9 @@ export default function AppLayout() {
   function handleSubjectSelected(subject: string) {
     if (!pendingDrop) return
     const { teacherId, gradeId, slotId, day } = pendingDrop
-    assignTeacher(gradeId, slotId, day, teacherId, subject)
     setPendingDrop(null)
+    if (!checkAndBlockLimit(subject, gradeId, null, null, null)) return
+    assignTeacher(gradeId, slotId, day, teacherId, subject)
   }
 
   const blockedTeacher = conflictBlocked ? teacherMap.get(conflictBlocked.teacherId) : null
@@ -187,12 +310,25 @@ export default function AppLayout() {
       }))
     : []
 
+  // All hooks must be called before any conditional return
   const dragHighlightValue = useMemo(
     () => ({ draggingTeacherId: draggingData?.teacherId ?? null, busySlotKeys }),
     [draggingData, busySlotKeys],
   )
 
+  if (isLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: '#0c1424' }}
+      >
+        <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+      </div>
+    )
+  }
+
   return (
+    <>
     <DragHighlightContext.Provider value={dragHighlightValue}>
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex h-screen overflow-hidden relative" style={{ background: '#f1f5f9' }}>
@@ -261,14 +397,29 @@ export default function AppLayout() {
           {/* Drag hint */}
           <div className="px-3 py-2 flex-shrink-0" style={{ borderBottom: '1px solid #1e2d42' }}>
             <p className="text-xs text-slate-600 flex items-center gap-1.5">
-              <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
-              </svg>
-              Arrastra profesores al horario
+              {activeTab === 'schedule' ? (
+                <>
+                  <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+                  </svg>
+                  Arrastra profesores al horario
+                </>
+              ) : (
+                <>
+                  <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Clic para ver horario
+                </>
+              )}
             </p>
           </div>
 
-          <TeacherPanel />
+          <TeacherPanel
+            activeTab={activeTab}
+            onTeacherClick={(teacher) => setSelectedTeacherModal(teacher)}
+          />
         </aside>
 
         {/* Main content */}
@@ -296,7 +447,7 @@ export default function AppLayout() {
             </div>
           </div>
 
-          <MainContent />
+          <MainContent activeTab={activeTab} onTabChange={setActiveTab} />
         </main>
       </div>
 
@@ -330,7 +481,68 @@ export default function AppLayout() {
           onClose={() => setConflictBlocked(null)}
         />
       )}
+
+      {/* Limit block modal */}
+      {limitBlocked && (
+        <LimitBlockModal
+          subject={limitBlocked.subject}
+          gradeLabel={gradeMap.get(limitBlocked.gradeId)?.label ?? '?'}
+          limit={limitBlocked.limit}
+          currentCount={limitBlocked.currentCount}
+          onClose={() => setLimitBlocked(null)}
+        />
+      )}
+
+      {/* Occupied cell modal */}
+      {occupiedCellBlocked && (
+        <OccupiedCellModal
+          targetGradeLabel={gradeMap.get(occupiedCellBlocked.targetGradeId)?.label ?? '?'}
+          existingTeacherName={teacherMap.get(occupiedCellBlocked.existingTeacherId)?.name ?? '?'}
+          existingTeacherColor={teacherMap.get(occupiedCellBlocked.existingTeacherId)?.color ?? 'bg-gray-500'}
+          existingSubject={occupiedCellBlocked.existingSubject}
+          sourceTeacherName={teacherMap.get(occupiedCellBlocked.sourceTeacherId ?? '')?.name ?? '?'}
+          sourceTeacherColor={teacherMap.get(occupiedCellBlocked.sourceTeacherId ?? '')?.color ?? 'bg-gray-500'}
+          sourceSubject={occupiedCellBlocked.sourceSubject}
+          day={occupiedCellBlocked.targetDay}
+          slotId={occupiedCellBlocked.targetSlotId}
+          onReplace={() => {
+            const { targetGradeId, targetSlotId, targetDay, sourceTeacherId, sourceSubject, sourceGradeId, sourceSlotId, sourceDay } = occupiedCellBlocked
+            setOccupiedCellBlocked(null)
+            if (sourceTeacherId && sourceGradeId && sourceSlotId && sourceDay) {
+              moveAssignment(
+                sourceGradeId,
+                sourceSlotId,
+                sourceDay,
+                targetGradeId,
+                targetSlotId,
+                targetDay,
+                sourceTeacherId,
+              )
+            } else if (sourceTeacherId) {
+              if (sourceSubject) {
+                assignTeacher(targetGradeId, targetSlotId, targetDay, sourceTeacherId, sourceSubject)
+              } else {
+                const teacher = teacherMap.get(sourceTeacherId)
+                if (teacher && teacher.subjects.length === 1) {
+                  assignTeacher(targetGradeId, targetSlotId, targetDay, sourceTeacherId, teacher.subjects[0])
+                } else if (teacher) {
+                  setPendingDrop({ teacherId: sourceTeacherId, gradeId: targetGradeId, slotId: targetSlotId, day: targetDay })
+                }
+              }
+            }
+          }}
+          onCancel={() => setOccupiedCellBlocked(null)}
+        />
+      )}
     </DndContext>
     </DragHighlightContext.Provider>
+    <WelcomeToast name={user?.email ?? ''} role="admin" />
+    {selectedTeacherModal && (
+      <TeacherScheduleModal
+        teacher={selectedTeacherModal}
+        onClose={() => setSelectedTeacherModal(null)}
+      />
+    )}
+    </>
   )
 }

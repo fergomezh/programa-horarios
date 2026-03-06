@@ -9,9 +9,12 @@ interface ScheduleState {
   assignments: Assignment[]
   activeGradeId: string | null
   storeError: string | null
+  isLoading: boolean
+  subjectLimits: Record<string, Record<string, number>>
 
   // Init
   initStore: () => Promise<void>
+  setSubjectLimit: (gradeId: string, subject: string, limit: number | null) => Promise<void>
 
   // Teacher actions
   addTeacher: (name: string, subjects: string[]) => Promise<void>
@@ -40,6 +43,7 @@ interface ScheduleState {
   loadSampleData: () => Promise<void>
 }
 
+
 let colorIndex = 0
 function nextColor(): string {
   const color = TEACHER_COLORS[colorIndex % TEACHER_COLORS.length]
@@ -48,20 +52,25 @@ function nextColor(): string {
 }
 
 const SAMPLE_TEACHERS: Omit<Teacher, 'id'>[] = [
-  { name: 'Marta López', subjects: ['Matemáticas', 'Estadística'], color: TEACHER_COLORS[0] },
-  { name: 'Carlos Rivas', subjects: ['Lenguaje', 'Literatura'], color: TEACHER_COLORS[1] },
-  { name: 'Ana García', subjects: ['Ciencias', 'Biología', 'Química'], color: TEACHER_COLORS[2] },
-  { name: 'Pedro Molina', subjects: ['Historia', 'Ciencias Sociales'], color: TEACHER_COLORS[3] },
-  { name: 'Lucía Torres', subjects: ['Inglés'], color: TEACHER_COLORS[4] },
+  { name: 'Carlos Martínez',  subjects: ['Matemáticas', 'Física'],               color: TEACHER_COLORS[0] },
+  { name: 'Ana López',        subjects: ['Lenguaje y Literatura'],                color: TEACHER_COLORS[1] },
+  { name: 'María García',     subjects: ['Inglés'],                               color: TEACHER_COLORS[2] },
+  { name: 'José Hernández',   subjects: ['Ciencias Naturales', 'Biología'],       color: TEACHER_COLORS[3] },
+  { name: 'Rosa Pérez',       subjects: ['Estudios Sociales', 'Historia'],        color: TEACHER_COLORS[4] },
+  { name: 'Miguel Torres',    subjects: ['Educación Física'],                     color: TEACHER_COLORS[5] },
+  { name: 'Carmen Flores',    subjects: ['Arte y Cultura', 'Música'],             color: TEACHER_COLORS[6] },
+  { name: 'Luis Rodríguez',   subjects: ['Informática', 'Tecnología'],            color: TEACHER_COLORS[7] },
+  { name: 'Diana Morales',    subjects: ['Química', 'Ciencias Naturales'],        color: TEACHER_COLORS[8] },
+  { name: 'Roberto Castillo', subjects: ['Religión', 'Moral y Ética'],            color: TEACHER_COLORS[9] },
 ]
 
-const SAMPLE_GRADES: Omit<Grade, 'id'>[] = [
-  { name: '1°', section: 'A', label: '1°A' },
-  { name: '1°', section: 'B', label: '1°B' },
-  { name: '2°', section: 'A', label: '2°A' },
-  { name: '3°', section: 'A', label: '3°A' },
-  { name: '4°', section: 'A', label: '4°A' },
-]
+const SAMPLE_GRADES: Omit<Grade, 'id'>[] = Array.from({ length: 12 }, (_, i) => {
+  const name = `${i + 1}°`
+  return [
+    { name, section: 'A', label: `${name}A` },
+    { name, section: 'B', label: `${name}B` },
+  ]
+}).flat()
 
 // Map DB snake_case rows → camelCase types
 function rowToTeacher(row: Record<string, unknown>): Teacher {
@@ -100,23 +109,59 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
   assignments: [],
   activeGradeId: null,
   storeError: null,
+  isLoading: true,
+  subjectLimits: {},
+
+  async setSubjectLimit(gradeId, subject, limit) {
+    if (limit === null) {
+      const { error } = await supabase
+        .from('subject_limits')
+        .delete()
+        .eq('grade_id', gradeId)
+        .eq('subject', subject)
+      if (error) { set({ storeError: error.message }); return }
+    } else {
+      const { error } = await supabase
+        .from('subject_limits')
+        .upsert({ grade_id: gradeId, subject, limit_hours: limit }, { onConflict: 'grade_id,subject' })
+      if (error) { set({ storeError: error.message }); return }
+    }
+    set((s) => {
+      const gradeMap = { ...(s.subjectLimits[gradeId] ?? {}) }
+      if (limit === null) delete gradeMap[subject]
+      else gradeMap[subject] = limit
+      return { subjectLimits: { ...s.subjectLimits, [gradeId]: gradeMap } }
+    })
+  },
 
   async initStore() {
-    const [teachersRes, gradesRes, assignmentsRes] = await Promise.all([
+    set({ isLoading: true })
+    const [teachersRes, gradesRes, assignmentsRes, limitsRes] = await Promise.all([
       supabase.from('teachers').select('*').order('name'),
       supabase.from('grades').select('*').order('label'),
       supabase.from('assignments').select('*'),
+      supabase.from('subject_limits').select('*'),
     ])
 
-    if (teachersRes.error || gradesRes.error || assignmentsRes.error) {
-      const msg = teachersRes.error?.message ?? gradesRes.error?.message ?? assignmentsRes.error?.message ?? 'Error loading data'
-      set({ storeError: msg })
+    if (teachersRes.error || gradesRes.error || assignmentsRes.error || limitsRes.error) {
+      const msg = teachersRes.error?.message ?? gradesRes.error?.message ?? assignmentsRes.error?.message ?? limitsRes.error?.message ?? 'Error loading data'
+      set({ storeError: msg, isLoading: false })
       return
     }
 
     const teachers = (teachersRes.data ?? []).map(rowToTeacher)
     const grades = (gradesRes.data ?? []).map(rowToGrade)
     const assignments = (assignmentsRes.data ?? []).map(rowToAssignment)
+
+    // Build subjectLimits map from flat rows
+    const subjectLimits: Record<string, Record<string, number>> = {}
+    for (const row of limitsRes.data ?? []) {
+      const gradeId = row.grade_id as string
+      const subject = row.subject as string
+      const limitHours = row.limit_hours as number
+      if (!subjectLimits[gradeId]) subjectLimits[gradeId] = {}
+      subjectLimits[gradeId][subject] = limitHours
+    }
 
     // Sync colorIndex past the last used color
     colorIndex = teachers.length % TEACHER_COLORS.length
@@ -125,8 +170,10 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
       teachers,
       grades,
       assignments,
+      subjectLimits,
       activeGradeId: grades[0]?.id ?? null,
       storeError: null,
+      isLoading: false,
     })
   },
 
@@ -153,6 +200,18 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
   },
 
   async removeTeacher(id) {
+    // If the teacher has an auth account, delete it first
+    const teacher = get().teachers.find((t) => t.id === id)
+    if (teacher?.email) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        await supabase.functions.invoke('delete-teacher-account', {
+          body: { teacherId: id },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+      }
+    }
+
     const { error } = await supabase.from('teachers').delete().eq('id', id)
     if (error) { set({ storeError: error.message }); return }
     set((s) => ({
@@ -282,7 +341,9 @@ export const useScheduleStore = create<ScheduleState>()((set, get) => ({
   },
 
   async loadSampleData() {
-    const existingCount = get().teachers.length
+    // Guard: never insert if data already exists
+    if (get().teachers.length > 0 || get().grades.length > 0) return
+    const existingCount = 0
 
     // Insert teachers
     const teacherRows = SAMPLE_TEACHERS.map((t, i) => ({

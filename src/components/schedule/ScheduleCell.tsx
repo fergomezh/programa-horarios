@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import type { Conflict, DayOfWeek, Teacher } from '../../types'
 import type { DroppableCellData } from '../../types'
 import { buildCellId } from '../../utils/idHelpers'
 import DraggableTeacherChip from './DraggableTeacherChip'
+import RemoveConfirmModal from './RemoveConfirmModal'
 import { useScheduleStore } from '../../store/useScheduleStore'
 import { DAYS_OF_WEEK, TIME_SLOTS } from '../../constants/schedule'
 import { useDragHighlight } from '../../context/DragHighlightContext'
@@ -20,6 +22,8 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, c
   const removeAssignment = useScheduleStore((s) => s.removeAssignment)
   const grades = useScheduleStore((s) => s.grades)
 
+  const [showConfirm, setShowConfirm] = useState(false)
+
   const { draggingTeacherId, busySlotKeys } = useDragHighlight()
 
   const cellId = buildCellId(gradeId, slotId, day)
@@ -31,16 +35,18 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, c
   const conflict = conflictKey ? conflicts.get(conflictKey) : undefined
   const isConflict = !!conflict
 
+  const gradeMap = new Map(grades.map((g) => [g.id, g]))
+  const slot = TIME_SLOTS.find((s) => s.id === slotId)
+  const dayLabel = DAYS_OF_WEEK.find((d) => d.id === day)?.label ?? day
+  const gradeLabel = gradeMap.get(gradeId)?.label ?? gradeId
+
   let conflictTitle: string | undefined
   if (isConflict && conflict && teacher) {
-    const gradeMap = new Map(grades.map((g) => [g.id, g]))
-    const slot = TIME_SLOTS.find((s) => s.id === slotId)
-    const dayLabel = DAYS_OF_WEEK.find((d) => d.id === day)?.label ?? day
     const gradeLabels = conflict.gradeIds.map((id) => gradeMap.get(id)?.label ?? id).join(', ')
     conflictTitle = `⚠ Conflicto: ${teacher.name} — ${dayLabel} · ${slot?.label} — Grados: ${gradeLabels}`
   }
 
-  // Estados de highlight para drag-and-drop
+  // Drag highlight states
   const isDragging = draggingTeacherId !== null
   const slotKey = `${slotId}::${day}`
   const isSafeTarget = isDragging && !busySlotKeys.has(slotKey)
@@ -50,26 +56,20 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, c
   let background: string | undefined
 
   if (isConflict) {
-    // Conflicto ya existente en el horario guardado
     borderLeft = '3px solid #f43f5e'
     background = '#fff1f2'
   } else if (isOver && isSafeTarget) {
-    // Arrastrando encima de una celda válida → verde vibrante
     borderLeft = '3px solid #10b981'
     background = '#d1fae5'
   } else if (isOver && isBlockedTarget) {
-    // Arrastrando encima de una celda bloqueada → rosa
     borderLeft = '3px solid #f43f5e'
     background = '#fff1f2'
   } else if (isOver) {
-    // Fallback hover sin drag
     borderLeft = '3px solid #3b82f6'
     background = '#eff6ff'
   } else if (isSafeTarget) {
-    // Celda válida durante drag pero sin hover → tinte verde sutil
     background = 'rgba(16,185,129,0.09)'
   } else if (isBlockedTarget) {
-    // Celda bloqueada durante drag → tinte rojo muy sutil
     background = 'rgba(244,63,94,0.05)'
   }
 
@@ -84,23 +84,41 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, c
   }
 
   return (
-    <td
-      ref={setNodeRef}
-      className={`border border-slate-200 transition-colors ${!isDragging ? 'hover:bg-slate-50/60' : ''}`}
-      style={style}
-      title={conflictTitle}
-    >
-      {teacher && subject !== null && (
-        <DraggableTeacherChip
+    <>
+      <td
+        ref={setNodeRef}
+        className={`border border-slate-200 transition-colors ${!isDragging ? 'hover:bg-slate-50/60' : ''}`}
+        style={style}
+        title={conflictTitle}
+      >
+        {teacher && subject !== null && (
+          <DraggableTeacherChip
+            teacher={teacher}
+            subject={subject}
+            gradeId={gradeId}
+            slotId={slotId}
+            day={day}
+            hasConflict={isConflict}
+            onRemove={() => removeAssignment(gradeId, slotId, day)}
+            onContextMenu={() => setShowConfirm(true)}
+          />
+        )}
+      </td>
+
+      {showConfirm && teacher && subject !== null && (
+        <RemoveConfirmModal
           teacher={teacher}
           subject={subject}
-          gradeId={gradeId}
-          slotId={slotId}
-          day={day}
-          hasConflict={isConflict}
-          onRemove={() => removeAssignment(gradeId, slotId, day)}
+          slotLabel={slot?.label ?? slotId}
+          dayLabel={dayLabel}
+          gradeLabel={gradeLabel}
+          onConfirm={() => {
+            setShowConfirm(false)
+            removeAssignment(gradeId, slotId, day)
+          }}
+          onCancel={() => setShowConfirm(false)}
         />
       )}
-    </td>
+    </>
   )
 }

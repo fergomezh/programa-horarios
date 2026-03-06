@@ -1,7 +1,11 @@
+import { useMemo } from 'react'
 import { useScheduleStore } from '../../store/useScheduleStore'
 import { useConflicts } from '../../hooks/useConflicts'
+import { TIME_SLOTS } from '../../constants/schedule'
 import ScheduleGrid from './ScheduleGrid'
 import PrintButton from '../pdf/PrintButton'
+
+const CLASS_SLOT_IDS = new Set(TIME_SLOTS.filter((s) => !s.isBreak).map((s) => s.id))
 
 export default function ScheduleBoard() {
   const grades = useScheduleStore((s) => s.grades)
@@ -10,6 +14,7 @@ export default function ScheduleBoard() {
   const activeGradeId = useScheduleStore((s) => s.activeGradeId)
   const setActiveGradeId = useScheduleStore((s) => s.setActiveGradeId)
   const loadSampleData = useScheduleStore((s) => s.loadSampleData)
+  const subjectLimits = useScheduleStore((s) => s.subjectLimits)
 
   const conflicts = useConflicts()
 
@@ -23,6 +28,35 @@ export default function ScheduleBoard() {
 
   const activeGrade = grades.find((g) => g.id === activeGradeId) ?? grades[0] ?? null
   const effectiveActiveId = activeGradeId ?? grades[0]?.id
+
+  const gradeOffTarget = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const grade of grades) {
+      const limits = subjectLimits[grade.id] ?? {}
+      for (const [subject, limit] of Object.entries(limits)) {
+        if (limit === 0) continue
+        const count = assignments.filter(
+          (a) => a.gradeId === grade.id && a.subject === subject && CLASS_SLOT_IDS.has(a.slotId),
+        ).length
+        if (count !== limit) map.set(grade.id, (map.get(grade.id) ?? 0) + 1)
+      }
+    }
+    return map
+  }, [grades, assignments, subjectLimits])
+
+  const requirementsSummary = useMemo(() => {
+    if (!activeGradeId) return []
+    const limits = subjectLimits[activeGradeId] ?? {}
+    return Object.entries(limits)
+      .filter(([, limit]) => limit > 0)
+      .map(([subject, limit]) => {
+        const count = assignments.filter(
+          (a) => a.gradeId === activeGradeId && a.subject === subject && CLASS_SLOT_IDS.has(a.slotId),
+        ).length
+        return { subject, limit, count }
+      })
+      .sort((a, b) => a.subject.localeCompare(b.subject))
+  }, [activeGradeId, assignments, subjectLimits])
 
   if (grades.length === 0) {
     return (
@@ -57,6 +91,8 @@ export default function ScheduleBoard() {
         {grades.map((g) => {
           const isActive = g.id === effectiveActiveId
           const hasConflict = gradesWithConflicts.has(g.id)
+          const offTargetCount = gradeOffTarget.get(g.id) ?? 0
+          const isOffTarget = offTargetCount > 0
 
           return (
             <button
@@ -80,6 +116,16 @@ export default function ScheduleBoard() {
                   title="Este grado tiene conflictos"
                 />
               )}
+              {isOffTarget && (
+                <span
+                  className={`flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex-shrink-0 ${
+                    isActive ? 'bg-amber-300 text-amber-900' : 'bg-amber-500 text-white'
+                  }`}
+                  title={`${offTargetCount} materia${offTargetCount !== 1 ? 's' : ''} pendiente${offTargetCount !== 1 ? 's' : ''}`}
+                >
+                  {offTargetCount}
+                </span>
+              )}
             </button>
           )
         })}
@@ -94,17 +140,76 @@ export default function ScheduleBoard() {
               </span>
             </div>
           )}
-
-          {/* PDF download for active grade */}
-          {activeGrade && (
-            <PrintButton
-              documentType="grade"
-              grade={activeGrade}
-              assignments={assignments}
-              teachers={teachers}
-            />
-          )}
         </div>
+      </div>
+
+      {/* Toolbar: badges + objectives for active grade */}
+      <div
+        className="flex items-center gap-2 px-4 py-2 overflow-x-auto flex-shrink-0 border-b border-slate-200"
+        style={{ background: '#f8fafc', minHeight: 40 }}
+      >
+        {conflicts.size > 0 && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 border border-rose-200 flex-shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 conflict-dot" />
+            <span className="text-xs font-semibold text-rose-600">
+              {conflicts.size} conflicto{conflicts.size !== 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
+
+        {requirementsSummary.length > 0 && (
+          <>
+            {conflicts.size > 0 && (
+              <div className="w-px h-4 bg-slate-300 flex-shrink-0" />
+            )}
+            <span className="text-[11px] text-slate-400 font-medium flex-shrink-0">Objetivos:</span>
+            {requirementsSummary.map(({ subject, limit, count }) => {
+              const missing = limit - count
+              const isComplete = count === limit
+              const isOver = count > limit
+
+              return (
+                <div
+                  key={subject}
+                  title={
+                    isComplete
+                      ? `${subject}: objetivo cumplido`
+                      : isOver
+                      ? `${subject}: excede en ${count - limit} hora${count - limit !== 1 ? 's' : ''}`
+                      : `${subject}: faltan ${missing} hora${missing !== 1 ? 's' : ''}`
+                  }
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${
+                    isOver
+                      ? 'bg-rose-50 border-rose-200 text-rose-700'
+                      : isComplete
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                      : 'bg-amber-50 border-amber-200 text-amber-700'
+                  }`}
+                >
+                  <span className="truncate max-w-[90px]">{subject}</span>
+                  <span
+                    className={`font-bold tabular-nums flex-shrink-0 ${
+                      isOver ? 'text-rose-600' : isComplete ? 'text-emerald-600' : 'text-amber-600'
+                    }`}
+                  >
+                    {count}/{limit}
+                  </span>
+                  {isComplete && (
+                    <svg className="w-3 h-3 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {!isComplete && !isOver && (
+                    <span className="text-amber-500 flex-shrink-0 font-bold">−{missing}</span>
+                  )}
+                  {isOver && (
+                    <span className="text-rose-500 flex-shrink-0 font-bold">+{count - limit}</span>
+                  )}
+                </div>
+              )
+            })}
+          </>
+        )}
       </div>
 
       {/* Schedule grid */}
@@ -113,6 +218,18 @@ export default function ScheduleBoard() {
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
             <ScheduleGrid grade={activeGrade} conflicts={conflicts} />
           </div>
+        )}
+      </div>
+
+      {/* PDF download button - below the schedule */}
+      <div className="flex justify-center px-4 pb-4 flex-shrink-0">
+        {activeGrade && (
+          <PrintButton
+            documentType="grade"
+            grade={activeGrade}
+            assignments={assignments}
+            teachers={teachers}
+          />
         )}
       </div>
     </div>

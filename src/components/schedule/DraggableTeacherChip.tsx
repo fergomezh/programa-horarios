@@ -11,9 +11,10 @@ interface Props {
   day: DayOfWeek
   hasConflict: boolean
   onRemove: () => void
+  onContextMenu?: (e: React.MouseEvent) => void
 }
 
-export default function DraggableTeacherChip({ teacher, subject, gradeId, slotId, day, hasConflict, onRemove }: Props) {
+export default function DraggableTeacherChip({ teacher, subject, gradeId, slotId, day, hasConflict, onRemove, onContextMenu }: Props) {
   const draggableId = `chip-${gradeId}-${slotId}-${day}`
 
   const data: DraggableTeacherData = {
@@ -43,7 +44,7 @@ export default function DraggableTeacherChip({ teacher, subject, gradeId, slotId
       className="cursor-grab active:cursor-grabbing w-full"
       onContextMenu={(e) => {
         e.preventDefault()
-        onRemove()
+        onContextMenu ? onContextMenu(e) : onRemove()
       }}
     >
       <TeacherChip teacher={teacher} subject={subject} hasConflict={hasConflict} />

@@ -7,9 +7,11 @@ import TeacherChip from './TeacherChip'
 interface Props {
   teacher: Teacher
   hasConflict: boolean
+  draggable?: boolean
+  onClick?: () => void
 }
 
-export default function TeacherCard({ teacher, hasConflict }: Props) {
+function DraggableCard({ teacher, hasConflict }: { teacher: Teacher; hasConflict: boolean }) {
   const data: DraggableTeacherData = {
     type: 'teacher',
     teacherId: teacher.id,
@@ -38,5 +40,20 @@ export default function TeacherCard({ teacher, hasConflict }: Props) {
     >
       <TeacherChip teacher={teacher} hasConflict={hasConflict} />
     </div>
+  )
+}
+
+export default function TeacherCard({ teacher, hasConflict, draggable = true, onClick }: Props) {
+  if (draggable) {
+    return <DraggableCard teacher={teacher} hasConflict={hasConflict} />
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left group cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg"
+    >
+      <TeacherChip teacher={teacher} hasConflict={hasConflict} />
+    </button>
   )
 }

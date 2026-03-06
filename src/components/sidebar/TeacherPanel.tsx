@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useScheduleStore } from '../../store/useScheduleStore'
 import { useConflicts } from '../../hooks/useConflicts'
+import type { Teacher } from '../../types'
+import type { MainTab } from '../layout/AppLayout'
 import TeacherCard from './TeacherCard'
 import AddTeacherModal from './AddTeacherModal'
 import ConflictPanel from './ConflictPanel'
 
-export default function TeacherPanel() {
+interface Props {
+  activeTab: MainTab
+  onTeacherClick: (teacher: Teacher) => void
+}
+
+export default function TeacherPanel({ activeTab, onTeacherClick }: Props) {
   const teachers = useScheduleStore((s) => s.teachers)
   const conflicts = useConflicts()
   const [showModal, setShowModal] = useState(false)
@@ -14,6 +21,8 @@ export default function TeacherPanel() {
   for (const conflict of conflicts.values()) {
     conflictedTeacherIds.add(conflict.teacherId)
   }
+
+  const isDraggable = activeTab === 'schedule'
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -61,6 +70,8 @@ export default function TeacherPanel() {
               key={t.id}
               teacher={t}
               hasConflict={conflictedTeacherIds.has(t.id)}
+              draggable={isDraggable}
+              onClick={() => onTeacherClick(t)}
             />
           ))
         )}

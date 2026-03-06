@@ -3,6 +3,7 @@ import { useScheduleStore } from '../store/useScheduleStore'
 import { useAuth } from '../hooks/useAuth'
 import { TIME_SLOTS, DAYS_OF_WEEK } from '../constants/schedule'
 import PrintButton from '../components/pdf/PrintButton'
+import WelcomeToast from '../components/WelcomeToast'
 
 export default function TeacherView() {
   const { user, logout } = useAuth()
@@ -29,6 +30,7 @@ export default function TeacherView() {
   }
 
   return (
+    <>
     <div className="min-h-screen" style={{ background: '#f1f5f9' }}>
       {/* Top bar */}
       <div
@@ -141,5 +143,7 @@ export default function TeacherView() {
         </div>
       </div>
     </div>
+    <WelcomeToast name={teacher?.name ?? user?.email ?? ''} role="teacher" />
+    </>
   )
 }
