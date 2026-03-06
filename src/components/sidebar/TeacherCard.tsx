@@ -37,7 +37,7 @@ function DraggableCard({ teacher, hasConflict }: { teacher: Teacher; hasConflict
       style={style}
       {...attributes}
       {...listeners}
-      className="group cursor-grab active:cursor-grabbing"
+      className="group cursor-grab active:cursor-grabbing focus:outline-none"
     >
       <TeacherChip teacher={teacher} hasConflict={hasConflict} />
     </div>
@@ -52,7 +52,7 @@ export default function TeacherCard({ teacher, hasConflict, draggable = true, on
   return (
     <button
       onClick={onClick}
-      className="w-full text-left group cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg"
+      className="w-full text-left group cursor-pointer transition-all duration-150 hover:-translate-y-px hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-crimson-500 focus:ring-offset-2 focus:ring-offset-navy-800 rounded-lg"
     >
       <TeacherChip teacher={teacher} hasConflict={hasConflict} />
     </button>

@@ -16,8 +16,10 @@ export default function TeacherChip({ teacher, hasConflict, isOverlay }: Props) 
       className={`
         relative flex items-center gap-2 rounded-md overflow-hidden
         bg-slate-800/60 border border-slate-700/50
-        ${isOverlay ? 'shadow-2xl scale-105 border-slate-600' : 'hover:bg-slate-800 hover:border-slate-600/70'}
-        transition-all
+        ${isOverlay
+          ? 'shadow-2xl scale-105 border-slate-600'
+          : 'hover:bg-slate-700/80 hover:border-slate-500/60 hover:shadow-md hover:shadow-black/20 hover:-translate-y-px'}
+        transition-all duration-150
       `}
     >
       <div className={`absolute left-0 inset-y-0 w-1 ${subjectColor}`} />
@@ -36,7 +38,7 @@ export default function TeacherChip({ teacher, hasConflict, isOverlay }: Props) 
           </div>
         )}
 
-        <div className="flex-shrink-0 grid grid-cols-2 gap-0.5 opacity-25">
+        <div className="flex-shrink-0 grid grid-cols-2 gap-0.5 opacity-25 group-hover:opacity-60 transition-opacity duration-150">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="w-0.5 h-0.5 rounded-full bg-slate-400" />
           ))}

@@ -32,52 +32,82 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: '#0c1424' }}
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{ background: '#0D1B35' }}
     >
-      <div className="w-full max-w-sm">
-        {/* Logo */}
+      {/* Subtle background texture — crimson radial glow top-left */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 60% 50% at 15% 0%, rgba(185,28,58,0.18) 0%, transparent 70%), radial-gradient(ellipse 40% 35% at 85% 100%, rgba(200,146,26,0.08) 0%, transparent 60%)',
+        }}
+      />
+
+      <div className="w-full max-w-sm relative z-10">
+        {/* Institutional header */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg mb-4">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          {/* Crest icon — crimson shield */}
+          <div
+            className="w-16 h-16 flex items-center justify-center mb-5 shadow-xl"
+            style={{
+              background: 'linear-gradient(145deg, #C41F40, #8B1230)',
+              borderRadius: '14px',
+              boxShadow: '0 8px 32px rgba(185,28,58,0.4), 0 2px 8px rgba(0,0,0,0.3)',
+            }}
+          >
+            {/* Graduation cap icon */}
+            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-white">Colegio Lamatepec</h1>
-          <p className="text-sm text-slate-400 mt-1">Sistema de Horarios</p>
+
+          {/* Thin crimson rule */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="h-px w-10 bg-crimson-700/60" />
+            <span className="text-[10px] font-bold tracking-[0.2em] text-crimson-500 uppercase">APCE</span>
+            <span className="h-px w-10 bg-crimson-700/60" />
+          </div>
+
+          <h1 className="text-2xl font-black text-white tracking-tight">Colegio Lamatepec</h1>
+          <p className="text-sm text-navy-500 mt-1.5" style={{ color: '#6B84A8' }}>Sistema de Gestión de Horarios</p>
         </div>
 
-        {/* Card */}
+        {/* Login card */}
         <form
           onSubmit={handleSubmit}
           className="rounded-2xl p-6 space-y-4"
-          style={{ background: '#111827', border: '1px solid #1e2d42' }}
+          style={{
+            background: '#112040',
+            border: '1px solid #1A2E4A',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.4)',
+          }}
         >
-          <h2 className="text-base font-semibold text-white mb-2">Iniciar sesión</h2>
+          <h2 className="text-sm font-semibold text-slate-300 mb-1">Iniciar sesión</h2>
 
           <div>
-            <label className="block text-xs text-slate-400 mb-1.5">Correo electrónico</label>
+            <label className="block text-xs text-slate-500 mb-1.5 font-medium">Correo electrónico</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="correo@lamatepec.edu.sv"
-              className="w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style={{ background: '#0c1424', border: '1px solid #1e2d42' }}
+              className="w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-crimson-600"
+              style={{ background: '#0D1B35', border: '1px solid #1A2E4A' }}
             />
           </div>
 
           <div>
-            <label className="block text-xs text-slate-400 mb-1.5">Contraseña</label>
+            <label className="block text-xs text-slate-500 mb-1.5 font-medium">Contraseña</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style={{ background: '#0c1424', border: '1px solid #1e2d42' }}
+              className="w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-crimson-600"
+              style={{ background: '#0D1B35', border: '1px solid #1A2E4A' }}
             />
           </div>
 
@@ -93,11 +123,20 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+            className="w-full py-2.5 rounded-lg text-white text-sm font-bold transition-all disabled:opacity-50 hover:brightness-110 active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, #C41F40, #991230)',
+              boxShadow: '0 4px 14px rgba(185,28,58,0.4)',
+            }}
           >
             {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
         </form>
+
+        {/* Footer */}
+        <p className="text-center text-[11px] mt-5" style={{ color: '#374F6B' }}>
+          © Colegio Lamatepec · APCE El Salvador
+        </p>
       </div>
     </div>
   )

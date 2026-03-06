@@ -72,7 +72,7 @@ export default function ScheduleBoard() {
         </p>
         <button
           onClick={loadSampleData}
-          className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+          className="px-5 py-2.5 bg-crimson-600 text-white text-sm font-semibold rounded-lg hover:bg-crimson-700 transition-colors shadow-sm"
         >
           Cargar datos de ejemplo
         </button>
@@ -102,8 +102,8 @@ export default function ScheduleBoard() {
                 relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap
                 transition-all flex-shrink-0
                 ${isActive
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-crimson-600 text-white shadow-sm hover:bg-crimson-700 active:scale-95'
+                  : 'bg-slate-100 text-slate-600 hover:bg-crimson-50 hover:text-crimson-700 hover:border hover:border-crimson-200 active:scale-95'
                 }
               `}
             >

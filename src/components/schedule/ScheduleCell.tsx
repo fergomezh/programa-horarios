@@ -87,11 +87,11 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, c
     <>
       <td
         ref={setNodeRef}
-        className={`border border-slate-200 transition-colors ${!isDragging ? 'hover:bg-slate-50/60' : ''}`}
+        className={`border border-slate-200 transition-colors group ${!isDragging ? 'hover:bg-slate-50' : ''}`}
         style={style}
         title={conflictTitle}
       >
-        {teacher && subject !== null && (
+        {teacher && subject !== null ? (
           <DraggableTeacherChip
             teacher={teacher}
             subject={subject}
@@ -102,6 +102,18 @@ export default function ScheduleCell({ gradeId, slotId, day, teacher, subject, c
             onRemove={() => removeAssignment(gradeId, slotId, day)}
             onContextMenu={() => setShowConfirm(true)}
           />
+        ) : (
+          /* Empty cell — show a faint + hint on hover when not dragging */
+          !isDragging && (
+            <div className="w-full h-full flex items-center justify-center pointer-events-none">
+              <svg
+                className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+          )
         )}
       </td>
 

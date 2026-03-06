@@ -33,7 +33,7 @@ export default function SubjectLimitsManager() {
         <select
           value={gradeId}
           onChange={(e) => setSelectedGradeId(e.target.value)}
-          className="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-crimson-600"
         >
           {grades.map((g) => (
             <option key={g.id} value={g.id}>{g.label}</option>
@@ -76,7 +76,7 @@ export default function SubjectLimitsManager() {
                           const val = Number(raw)
                           if (!isNaN(val) && val >= 0) setSubjectLimit(gradeId, subject, val)
                         }}
-                        className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-20 text-sm border border-gray-300 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-crimson-600"
                       />
                     </td>
                     <td className="px-2 py-2.5">

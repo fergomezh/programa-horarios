@@ -16,28 +16,35 @@ export default function ManagementPanel() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white sticky top-0">
-        <div className="flex gap-1">
+      {/* ── Sub-tab bar (underline style — subordinate to main crimson pills) ── */}
+      <div className="flex items-center justify-between px-6 border-b border-slate-200 bg-slate-50 sticky top-0">
+        <div className="flex gap-0">
           <button
             onClick={() => setTab('teachers')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-              tab === 'teachers' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+            className={`px-4 py-2.5 text-xs font-semibold transition-all border-b-2 -mb-px whitespace-nowrap ${
+              tab === 'teachers'
+                ? 'border-crimson-600 text-crimson-700'
+                : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-300'
             }`}
           >
             Profesores
           </button>
           <button
             onClick={() => setTab('grades')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-              tab === 'grades' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+            className={`px-4 py-2.5 text-xs font-semibold transition-all border-b-2 -mb-px whitespace-nowrap ${
+              tab === 'grades'
+                ? 'border-crimson-600 text-crimson-700'
+                : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-300'
             }`}
           >
             Grados
           </button>
           <button
             onClick={() => setTab('limits')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-              tab === 'limits' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+            className={`px-4 py-2.5 text-xs font-semibold transition-all border-b-2 -mb-px whitespace-nowrap ${
+              tab === 'limits'
+                ? 'border-crimson-600 text-crimson-700'
+                : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-300'
             }`}
           >
             Límites

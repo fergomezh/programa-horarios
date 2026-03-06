@@ -48,7 +48,7 @@ export default function GradeManager() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="1°"
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-crimson-600"
           />
         </div>
         <div className="flex-1">
@@ -57,13 +57,13 @@ export default function GradeManager() {
             value={newSection}
             onChange={(e) => setNewSection(e.target.value)}
             placeholder="A"
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-crimson-600"
           />
         </div>
         <button
           type="submit"
           disabled={!newName.trim() || !newSection.trim()}
-          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-40"
+          className="px-3 py-1.5 bg-crimson-600 text-white text-sm rounded hover:bg-crimson-700 disabled:opacity-40"
         >
           Agregar
         </button>
@@ -88,7 +88,7 @@ export default function GradeManager() {
             </tr>
           )}
           {grades.map((g) => (
-            <tr key={g.id} className="hover:bg-gray-50">
+            <tr key={g.id} className="hover:bg-crimson-50/30 transition-colors">
               <td className="border border-gray-200 px-3 py-2 font-medium">{g.label}</td>
               <td className="border border-gray-200 px-3 py-2">
                 {editingId === g.id ? (
@@ -100,7 +100,7 @@ export default function GradeManager() {
                     onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
                   />
                 ) : (
-                  <span className="cursor-pointer hover:text-blue-600" onClick={() => startEdit(g.id, g.name, g.section)}>
+                  <span className="cursor-pointer hover:text-crimson-600" onClick={() => startEdit(g.id, g.name, g.section)}>
                     {g.name}
                   </span>
                 )}
@@ -114,23 +114,25 @@ export default function GradeManager() {
                     onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
                   />
                 ) : (
-                  <span className="cursor-pointer hover:text-blue-600" onClick={() => startEdit(g.id, g.name, g.section)}>
+                  <span className="cursor-pointer hover:text-crimson-600" onClick={() => startEdit(g.id, g.name, g.section)}>
                     {g.section}
                   </span>
                 )}
               </td>
               <td className="border border-gray-200 px-3 py-2">
-                {editingId === g.id ? (
-                  <button onClick={saveEdit} className="text-xs text-blue-600 hover:underline mr-2">
-                    Guardar
+                <div className="flex items-center gap-1">
+                  {editingId === g.id ? (
+                    <button onClick={saveEdit} className="text-xs text-crimson-600 font-medium px-2 py-0.5 rounded-md hover:bg-crimson-50 transition-colors">
+                      Guardar
+                    </button>
+                  ) : null}
+                  <button
+                    onClick={() => setConfirmDeleteId(g.id)}
+                    className="text-xs text-red-500 font-medium px-2 py-0.5 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors"
+                  >
+                    Eliminar
                   </button>
-                ) : null}
-                <button
-                  onClick={() => setConfirmDeleteId(g.id)}
-                  className="text-xs text-red-500 hover:underline"
-                >
-                  Eliminar
-                </button>
+                </div>
               </td>
             </tr>
           ))}

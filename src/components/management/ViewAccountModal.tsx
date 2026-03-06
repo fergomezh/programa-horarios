@@ -96,7 +96,7 @@ export default function ViewAccountModal({ teacher, onClose }: Props) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-crimson-600"
                 />
                 <button
                   type="button"
@@ -137,7 +137,7 @@ export default function ViewAccountModal({ teacher, onClose }: Props) {
               <button
                 type="submit"
                 disabled={loading || password.length < 6}
-                className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="flex-1 py-2 rounded-lg bg-crimson-600 text-white text-sm font-semibold hover:bg-crimson-700 transition-colors disabled:opacity-50"
               >
                 {loading ? 'Guardando…' : 'Guardar'}
               </button>

@@ -42,7 +42,7 @@ export default function DraggableTeacherChip({ teacher, subject, gradeId, slotId
       style={style}
       {...attributes}
       {...listeners}
-      className="cursor-grab active:cursor-grabbing w-full"
+      className="group cursor-grab active:cursor-grabbing w-full"
       onContextMenu={(e) => {
         e.preventDefault()
         onContextMenu ? onContextMenu(e) : onRemove()

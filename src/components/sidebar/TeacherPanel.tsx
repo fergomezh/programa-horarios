@@ -70,7 +70,7 @@ export default function TeacherPanel({ activeTab, onTeacherClick }: Props) {
           <select
             value={subjectFilter}
             onChange={(e) => setSubjectFilter(e.target.value)}
-            className="w-full text-xs bg-slate-800 text-slate-300 border border-slate-700 rounded px-2 py-1.5 focus:outline-none focus:border-blue-500"
+            className="w-full text-xs bg-slate-800 text-slate-300 border border-slate-700 rounded px-2 py-1.5 focus:outline-none focus:border-crimson-500"
           >
             <option value="">Todas las materias</option>
             {allSubjects.map((subject) => (

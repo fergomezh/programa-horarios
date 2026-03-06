@@ -16,17 +16,26 @@ export default function MainContent({ activeTab, onTabChange, onHelpClick }: Pro
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Tab bar */}
+      {/* ── Main navigation tab bar ── */}
+      {/* Visual identity: crimson-filled pills = primary nav. Sub-tabs inside each panel use underline style. */}
       <div
-        className="flex items-center gap-1.5 px-4 py-2.5 flex-shrink-0 border-b border-slate-200"
-        style={{ background: '#fff' }}
+        className="flex items-center gap-1 px-4 flex-shrink-0"
+        style={{
+          background: '#fff',
+          borderBottom: '2px solid #EDE8E3',
+          paddingTop: '10px',
+          paddingBottom: '10px',
+        }}
       >
+        {/* Thin crimson left rule — institutional accent */}
+        <span className="w-0.5 h-6 rounded-full bg-crimson-600 mr-2 flex-shrink-0" />
+
         <button
           onClick={() => onTabChange('reports')}
-          className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${
+          className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-150 active:scale-95 ${
             activeTab === 'reports'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+              ? 'bg-crimson-600 text-white shadow-md hover:bg-crimson-700'
+              : 'text-slate-500 hover:bg-crimson-50 hover:text-crimson-700'
           }`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -37,10 +46,10 @@ export default function MainContent({ activeTab, onTabChange, onHelpClick }: Pro
 
         <button
           onClick={() => onTabChange('schedule')}
-          className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${
+          className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-150 active:scale-95 ${
             activeTab === 'schedule'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+              ? 'bg-crimson-600 text-white shadow-md hover:bg-crimson-700'
+              : 'text-slate-500 hover:bg-crimson-50 hover:text-crimson-700'
           }`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -56,10 +65,10 @@ export default function MainContent({ activeTab, onTabChange, onHelpClick }: Pro
 
         <button
           onClick={() => onTabChange('manage')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-150 active:scale-95 ${
             activeTab === 'manage'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+              ? 'bg-crimson-600 text-white shadow-md hover:bg-crimson-700'
+              : 'text-slate-500 hover:bg-crimson-50 hover:text-crimson-700'
           }`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -73,7 +82,7 @@ export default function MainContent({ activeTab, onTabChange, onHelpClick }: Pro
 
         <button
           onClick={onHelpClick}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition-colors flex-shrink-0"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-navy-800 hover:bg-navy-700 active:scale-95 text-white text-sm font-semibold shadow-sm transition-all duration-150 flex-shrink-0"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />

@@ -323,9 +323,9 @@ export default function AppLayout() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: '#0c1424' }}
+        style={{ background: '#0D1B35' }}
       >
-        <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-crimson-600 border-t-transparent animate-spin" />
       </div>
     )
   }
@@ -334,7 +334,7 @@ export default function AppLayout() {
     <>
     <DragHighlightContext.Provider value={dragHighlightValue}>
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex h-screen overflow-hidden relative" style={{ background: '#f1f5f9' }}>
+      <div className="flex h-screen overflow-hidden relative" style={{ background: '#F2F0ED' }}>
 
         {/* Mobile backdrop */}
         {sidebarOpen && (
@@ -353,14 +353,17 @@ export default function AppLayout() {
             transition-transform duration-300 ease-in-out
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           `}
-          style={{ background: '#0c1424', borderRight: '1px solid #1e2d42' }}
+          style={{ background: '#0D1B35', borderRight: '1px solid #1A2E4A' }}
         >
+          {/* Crimson institutional accent line at the very top of the sidebar */}
+          <div className="h-0.5 w-full bg-crimson-600 flex-shrink-0" />
+
           {/* Branding header */}
           <div
             className="flex items-center gap-3 px-4 py-4 flex-shrink-0"
-            style={{ borderBottom: '1px solid #1e2d42' }}
+            style={{ borderBottom: '1px solid #1A2E4A' }}
           >
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+            <div className="w-8 h-8 rounded-lg bg-crimson-600 flex items-center justify-center flex-shrink-0 shadow-lg">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -381,10 +384,10 @@ export default function AppLayout() {
           </div>
 
           {/* User info + logout */}
-          <div className="px-3 py-2 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid #1e2d42' }}>
+          <div className="px-3 py-2 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid #1A2E4A' }}>
             <div className="min-w-0">
               <p className="text-xs text-slate-400 truncate">{user?.email}</p>
-              <p className="text-xs text-blue-500 font-medium">Admin</p>
+              <p className="text-xs text-crimson-500 font-medium">Admin</p>
             </div>
             <button
               onClick={logout}
@@ -398,7 +401,7 @@ export default function AppLayout() {
           </div>
 
           {/* Drag hint */}
-          <div className="px-3 py-2 flex-shrink-0" style={{ borderBottom: '1px solid #1e2d42' }}>
+          <div className="px-3 py-2 flex-shrink-0" style={{ borderBottom: '1px solid #1A2E4A' }}>
             <p className="text-xs text-slate-600 flex items-center gap-1.5">
               {activeTab === 'schedule' ? (
                 <>
@@ -430,7 +433,7 @@ export default function AppLayout() {
           {/* Mobile top bar */}
           <div
             className="md:hidden flex items-center gap-3 px-3 py-2.5 flex-shrink-0"
-            style={{ background: '#0c1424', borderBottom: '1px solid #1e2d42' }}
+            style={{ background: '#0D1B35', borderBottom: '1px solid #1A2E4A' }}
           >
             <button
               onClick={() => setSidebarOpen(true)}
@@ -441,7 +444,7 @@ export default function AppLayout() {
               </svg>
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-md bg-crimson-600 flex items-center justify-center">
                 <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>

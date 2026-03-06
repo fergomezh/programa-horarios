@@ -31,14 +31,16 @@ export default function TeacherView() {
 
   return (
     <>
-    <div className="min-h-screen" style={{ background: '#f1f5f9' }}>
+    <div className="min-h-screen" style={{ background: '#F2F0ED' }}>
+      {/* Crimson top accent */}
+      <div className="h-0.5 w-full bg-crimson-600" />
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-4 py-3"
-        style={{ background: '#0c1424', borderBottom: '1px solid #1e2d42' }}
+        style={{ background: '#0D1B35', borderBottom: '1px solid #1A2E4A' }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-crimson-600 flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -51,7 +53,7 @@ export default function TeacherView() {
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
             <p className="text-xs text-slate-400">{user?.email}</p>
-            <p className="text-xs text-blue-400 font-medium">{teacher?.name ?? 'Profesor'}</p>
+            <p className="text-xs text-crimson-400 font-medium">{teacher?.name ?? 'Profesor'}</p>
           </div>
           <button
             onClick={logout}
@@ -93,7 +95,7 @@ export default function TeacherView() {
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm overflow-x-auto">
           <table className="w-full text-sm border-collapse min-w-[600px]">
             <thead>
-              <tr style={{ background: '#0c1424' }}>
+              <tr style={{ background: '#0D1B35' }}>
                 <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-400 w-28">Hora</th>
                 {DAYS_OF_WEEK.map((d) => (
                   <th key={d.id} className="px-3 py-2.5 text-center text-xs font-semibold text-slate-300">

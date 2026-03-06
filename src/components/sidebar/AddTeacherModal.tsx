@@ -60,7 +60,7 @@ export default function AddTeacherModal({ onClose }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej: María López"
-              className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-crimson-600"
               style={{ background: '#162844', border: '1px solid #1e3a5f' }}
             />
           </div>
@@ -104,14 +104,14 @@ export default function AddTeacherModal({ onClose }: Props) {
                 onChange={(e) => setSubjectInput(e.target.value)}
                 onKeyDown={handleSubjectKeyDown}
                 placeholder="Ej: Matemáticas"
-                className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-crimson-600"
                 style={{ background: '#162844', border: '1px solid #1e3a5f' }}
               />
               <button
                 type="button"
                 onClick={addSubject}
                 disabled={!subjectInput.trim()}
-                className="px-3 py-2 text-xs font-semibold rounded-lg text-white bg-blue-700 hover:bg-blue-600 disabled:opacity-30 transition-colors"
+                className="px-3 py-2 text-xs font-semibold rounded-lg text-white bg-crimson-700 hover:bg-crimson-600 disabled:opacity-30 transition-colors"
               >
                 + Agregar
               </button>
@@ -132,7 +132,7 @@ export default function AddTeacherModal({ onClose }: Props) {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="flex-1 px-3 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-3 py-2 text-sm font-semibold bg-crimson-600 text-white rounded-lg hover:bg-crimson-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Agregar
             </button>

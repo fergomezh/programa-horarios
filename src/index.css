@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* ─── Colegio Lamatepec — Institutional color palette ─── */
+@theme {
+  --color-crimson-50:  #FEF0F2;
+  --color-crimson-100: #FEE2E7;
+  --color-crimson-200: #FECDD5;
+  --color-crimson-500: #D93050;
+  --color-crimson-600: #B91C3A;
+  --color-crimson-700: #991230;
+  --color-crimson-800: #7A0D26;
+  --color-navy-800:    #0D1B35;
+  --color-navy-700:    #122340;
+  --color-navy-600:    #1A2E4A;
+  --color-navy-500:    #243755;
+  --color-gold-400:    #DBA626;
+  --color-gold-500:    #C8921A;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -23,11 +40,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #1A2E4A;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #243755;
 }
 
 /* Conflict pulse animation */
@@ -37,6 +54,11 @@ body {
 }
 .conflict-dot {
   animation: conflict-pulse 2s ease-in-out infinite;
+}
+
+/* Smooth scale for active states */
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Drop zone shimmer */

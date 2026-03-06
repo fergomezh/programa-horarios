@@ -19,7 +19,7 @@ export default function ConflictPanel() {
     <div
       className="flex-shrink-0"
       style={{
-        borderTop: hasConflicts ? '1px solid rgba(239,68,68,0.4)' : '1px solid #1e2d42',
+        borderTop: hasConflicts ? '1px solid rgba(239,68,68,0.4)' : '1px solid #1A2E4A',
       }}
     >
       {/* Header */}

@@ -35,8 +35,8 @@ export default function ReportsPanel() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      {/* Inner tab bar */}
-      <div className="flex items-center gap-1.5 px-4 py-2.5 bg-white border-b border-slate-200 flex-shrink-0 overflow-x-auto">
+      {/* ── Sub-tab bar (underline style — visually subordinate to main crimson pills) ── */}
+      <div className="flex items-center gap-0 px-6 bg-slate-50 border-b border-slate-200 flex-shrink-0 overflow-x-auto">
         <TabButton id="dashboard" active={activeTab} onClick={setActiveTab} label="Resumen" icon={
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -88,13 +88,13 @@ function TabButton({
   return (
     <button
       onClick={() => onClick(id)}
-      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${
+      className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold whitespace-nowrap transition-all border-b-2 -mb-px ${
         isActive
-          ? 'bg-blue-600 text-white shadow-sm'
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+          ? 'border-crimson-600 text-crimson-700'
+          : 'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-300'
       }`}
     >
-      {icon}
+      <span className={isActive ? 'text-crimson-600' : ''}>{icon}</span>
       {label}
     </button>
   )
@@ -232,7 +232,7 @@ function DashboardReport() {
                     <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2.5 text-sm min-w-[160px]">
                       <p className="font-semibold text-slate-800 mb-1">{d.name}</p>
                       <p className="text-slate-500 text-xs mb-1">{d.subjects.join(', ')}</p>
-                      <p className="font-bold text-blue-600">{d.hours} horas / sem.</p>
+                      <p className="font-bold text-crimson-600">{d.hours} horas / sem.</p>
                     </div>
                   )
                 }}
@@ -329,7 +329,7 @@ function StatCard({
   icon: React.ReactNode
 }) {
   const colors = {
-    blue: { bg: 'bg-blue-50', text: 'text-blue-700', icon: 'text-blue-500', border: 'border-blue-100' },
+    blue: { bg: 'bg-crimson-50', text: 'text-crimson-700', icon: 'text-crimson-600', border: 'border-crimson-100' },
     emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: 'text-emerald-500', border: 'border-emerald-100' },
     violet: { bg: 'bg-violet-50', text: 'text-violet-700', icon: 'text-violet-500', border: 'border-violet-100' },
     amber: { bg: 'bg-amber-50', text: 'text-amber-700', icon: 'text-amber-500', border: 'border-amber-100' },
@@ -454,7 +454,7 @@ function TeacherHoursReport() {
         <select
           value={selectedTeacherId}
           onChange={(e) => setSelectedTeacherId(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-crimson-600"
         >
           <option value="">— Elegir profesor —</option>
           <option value="__all__">Todos</option>
@@ -504,9 +504,9 @@ function TeacherHoursReport() {
                           ))}
                         </tbody>
                       </table>
-                      <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-blue-50">
-                        <span className="text-sm font-bold text-blue-800">Total</span>
-                        <span className="text-sm font-bold text-blue-800 tabular-nums">{total} horas</span>
+                      <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-crimson-50">
+                        <span className="text-sm font-bold text-crimson-800">Total</span>
+                        <span className="text-sm font-bold text-crimson-800 tabular-nums">{total} horas</span>
                       </div>
                     </>
                   )}
@@ -558,9 +558,9 @@ function TeacherHoursReport() {
                   ))}
                 </tbody>
               </table>
-              <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-blue-50">
-                <span className="text-sm font-bold text-blue-800">Total</span>
-                <span className="text-sm font-bold text-blue-800 tabular-nums">{totalHours} horas</span>
+              <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-crimson-50">
+                <span className="text-sm font-bold text-crimson-800">Total</span>
+                <span className="text-sm font-bold text-crimson-800 tabular-nums">{totalHours} horas</span>
               </div>
             </>
           )}
@@ -781,7 +781,7 @@ function GradeTeamReport() {
         <select
           value={selectedGradeId}
           onChange={(e) => setSelectedGradeId(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-crimson-600"
         >
           <option value="">— Elegir sección —</option>
           {grades.map((g) => (
@@ -847,9 +847,9 @@ function GradeTeamReport() {
                 </tbody>
               </table>
 
-              <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-blue-50">
-                <span className="text-sm font-bold text-blue-800">Total horas sección</span>
-                <span className="text-sm font-bold text-blue-800 tabular-nums">{grandTotal} horas</span>
+              <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-crimson-50">
+                <span className="text-sm font-bold text-crimson-800">Total horas sección</span>
+                <span className="text-sm font-bold text-crimson-800 tabular-nums">{grandTotal} horas</span>
               </div>
             </>
           )}

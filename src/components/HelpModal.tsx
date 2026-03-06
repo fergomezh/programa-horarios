@@ -7,7 +7,7 @@ const steps = [
     number: '01',
     title: 'Agregar Profesores',
     tab: 'Gestionar → Profesores',
-    color: 'bg-blue-500',
+    color: 'bg-crimson-600',
     content: [
       'Haz clic en "Nuevo profesor" e ingresa el nombre y las materias que imparte.',
       'Un profesor puede tener una o varias materias asignadas.',
@@ -110,10 +110,10 @@ export default function HelpModal({ onClose }: Props) {
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4 flex-shrink-0"
-          style={{ background: '#0c1424', borderBottom: '1px solid #1e2d42' }}
+          style={{ background: '#0D1B35', borderBottom: '1px solid #1A2E4A' }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-crimson-600 flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
@@ -179,12 +179,12 @@ export default function HelpModal({ onClose }: Props) {
           </div>
 
           {/* Tips */}
-          <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-            <p className="text-xs font-semibold text-blue-700 mb-2.5 uppercase tracking-wide">Consejos rapidos</p>
+          <div className="rounded-xl border border-crimson-100 bg-crimson-50 p-4">
+            <p className="text-xs font-semibold text-crimson-700 mb-2.5 uppercase tracking-wide">Consejos rapidos</p>
             <div className="space-y-2.5">
               {tips.map((tip, i) => (
                 <div key={i} className="flex items-start gap-2.5">
-                  <span className="text-blue-500 flex-shrink-0 mt-0.5">{tip.icon}</span>
+                  <span className="text-crimson-600 flex-shrink-0 mt-0.5">{tip.icon}</span>
                   <p className="text-xs text-slate-600 leading-relaxed">{tip.text}</p>
                 </div>
               ))}
@@ -199,7 +199,7 @@ export default function HelpModal({ onClose }: Props) {
         >
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+            className="px-4 py-2 rounded-lg bg-crimson-600 hover:bg-crimson-700 text-white text-sm font-semibold transition-colors"
           >
             Entendido
           </button>

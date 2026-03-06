@@ -46,7 +46,7 @@ export default function TeacherScheduleModal({ teacher, onClose }: Props) {
         {/* Modal header */}
         <div
           className="flex items-center justify-between px-5 py-4 flex-shrink-0"
-          style={{ background: '#0c1424', borderBottom: '1px solid #1e2d42' }}
+          style={{ background: '#0D1B35', borderBottom: '1px solid #1A2E4A' }}
         >
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full flex-shrink-0 ${teacher.color}`} />
@@ -80,7 +80,7 @@ export default function TeacherScheduleModal({ teacher, onClose }: Props) {
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm overflow-x-auto">
             <table className="w-full text-sm border-collapse min-w-[560px]">
               <thead>
-                <tr style={{ background: '#0c1424' }}>
+                <tr style={{ background: '#0D1B35' }}>
                   <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-400 w-28">Hora</th>
                   {DAYS_OF_WEEK.map((d) => (
                     <th key={d.id} className="px-3 py-2.5 text-center text-xs font-semibold text-slate-300">
